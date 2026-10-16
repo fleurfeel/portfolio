@@ -16,6 +16,7 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 - `src/layouts/BaseLayout.astro` — базовый лейаут (lang="ru", meta, preload шрифта)
 - `public/fonts/` — Jura, вариативный woff2, subset latin + cyrillic
 - `public/models/` — сжатые GLB (meshopt + WebP)
+- Прод: https://portfolio-d4l.pages.dev (`site` в astro.config.mjs)
 - `public/_headers` — заголовки кэша для Cloudflare Pages; `.node-version` — версия Node для сборки
 - `docs/mascot.md` — разбор прототипа маскота: риг, анимации, параметры
 - `tests/unit/` — Vitest, `tests/e2e/` — Playwright, `lighthouserc.cjs` — бюджет Lighthouse
