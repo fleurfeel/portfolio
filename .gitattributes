@@ -1,0 +1,4 @@
+*.glb binary
+*.woff2 binary
+*.avif binary
+* text=auto eol=lf

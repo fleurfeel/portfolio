@@ -1,0 +1,42 @@
+---
+import '../styles/global.css';
+// Должен совпадать с src в @font-face (src/styles/global.css), иначе preload скачает файл дважды
+const fontUrl = '/fonts/jura-var-latin-cyrillic.woff2';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Портфолио продуктового дизайнера',
+  description = 'Портфолио продуктового дизайнера: проекты, подход к работе и контакты.',
+} = Astro.props;
+
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+---
+
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+
+    <link rel="preload" href={fontUrl} as="font" type="font/woff2" crossorigin />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body class="bg-bg text-text font-sans antialiased">
+    <slot />
+  </body>
+</html>

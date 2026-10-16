@@ -1,0 +1,52 @@
+@import 'tailwindcss';
+
+/* Прототипы и исходники не должны попадать в сканирование классов */
+@source not '../../reference';
+
+/* Jura: вариативный (wght 300–700), subset latin + cyrillic (+ ₽ и №). Лицензия: public/fonts/Jura-OFL.txt */
+@font-face {
+  font-family: 'Jura';
+  src: url('/fonts/jura-var-latin-cyrillic.woff2') format('woff2-variations'),
+    url('/fonts/jura-var-latin-cyrillic.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+  Единственный источник цветов и шрифтов.
+  Стандартные палитры Tailwind сброшены: в утилитах доступны только эти токены
+  (bg-bg, text-text, text-accent, text-secondary, font-sans …).
+  static — переменные всегда попадают в :root, даже если утилита не используется,
+  чтобы var(--color-…) работал в <style> компонентов.
+*/
+@theme static {
+  --color-*: initial;
+  --color-text: #1b1b1b;
+  --color-bg: #f2f3f5;
+  --color-accent: #4b3bd6;
+  --color-secondary: #5c6370;
+
+  --font-*: initial;
+  --font-sans: 'Jura', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
