@@ -1,0 +1,454 @@
+---
+// Первый экран. Макеты Figma: Mobile 393 (428:347), Laptop 1440 (411:270), Desktop 1920 (427:316).
+// До 1024 px — мобильная раскладка; 1024–1440 — ноутбучная, пропорционально; 1440–1920 — плавно к десктопной.
+import { Image, Picture } from 'astro:assets';
+import ArrowRight from '../../assets/icons/arrow-right.svg';
+import ArrowRightBold from '../../assets/icons/arrow-right-bold.svg';
+import Burger from '../../assets/icons/burger.svg';
+import avatar from '../../assets/hero/avatar.png';
+import logos from '../../assets/hero/logos.png';
+import mascot from '../../assets/hero/mascot.png';
+import Mascot from './Mascot.vue';
+import MobileMenu from './MobileMenu.vue';
+
+const links = [
+  { href: '#projects', label: 'Проекты' },
+  { href: '#about', label: 'Обо мне' },
+  { href: '#services', label: 'Услуги' },
+];
+const contact = { href: '#contact', label: 'Связаться со мной' };
+---
+
+<section class="hero" data-hero aria-labelledby="hero-title">
+  <header class="hero__header">
+    <a class="hero__avatar" href="/" aria-label="На главную">
+      <Image src={avatar} widths={[62, 83, 122, 166]} sizes="(min-width: 1920px) 83px, (min-width: 1024px) 4.24vw, 31px" alt="" />
+    </a>
+
+    <nav class="hero__nav" aria-label="Основная навигация">
+      <ul>
+        {
+          links.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <p class="hero__name-mobile" aria-hidden="true">Пашковский Руслан</p>
+
+    <div class="hero__burger">
+      <MobileMenu client:media="(max-width: 1023.98px)" links={links} contact={contact}>
+        <Burger slot="icon" />
+        <ArrowRight slot="arrow" />
+      </MobileMenu>
+    </div>
+
+    <a class="hero__contact" href={contact.href}>
+      {contact.label}
+      <ArrowRight class="hero__arrow hero__arrow--thin" />
+      <ArrowRightBold class="hero__arrow hero__arrow--bold" />
+    </a>
+  </header>
+
+  <!-- Статичный постер: виден сразу, 3D-маскот встаёт ровно на его место и плавно его сменяет -->
+  <div class="hero__stage">
+    <div class="hero__logos" aria-hidden="true">
+      <Picture
+        src={logos}
+        formats={['avif', 'webp']}
+        widths={[600, 900, 1300, 1800, 2400, 3000]}
+        sizes="(min-width: 1920px) 1410px, (min-width: 1024px) 80vw, 152vw"
+        alt=""
+        loading="eager"
+        decoding="async"
+      />
+    </div>
+    <Picture
+      src={mascot}
+      formats={['avif', 'webp']}
+      widths={[300, 450, 600, 900, 1200, 1400, 1792]}
+      sizes="(min-width: 1920px) 690px, (min-width: 1024px) 36vw, 72vw"
+      alt="Маскот Руслана — кудрявый 3D-персонаж"
+      class="hero__mascot"
+      data-mascot-poster
+      loading="eager"
+      fetchpriority="high"
+    />
+  </div>
+
+  <Mascot client:idle />
+
+
+  <div class="hero__bottom">
+    <div class="hero__lead">
+      <h1 id="hero-title" class="hero__title">
+        <span class="sr-only">Пашковский Руслан — </span>
+        <span class="hero__line">Продуктовый</span>
+        <span class="hero__line">дизайнер</span>
+      </h1>
+      <a class="hero__cta" href="#projects">Смотреть портфолио</a>
+    </div>
+    <p class="hero__name" aria-hidden="true">
+      <span class="hero__line">Пашковский</span>
+      <span class="hero__line">Руслан</span>
+    </p>
+  </div>
+</section>
+
+<style>
+  /* ---------- общее ---------- */
+  .hero {
+    position: relative;
+    overflow: clip;
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .hero__header,
+  .hero__bottom {
+    position: relative;
+    z-index: 2;
+    pointer-events: none; /* пустые места пропускают клики к 3D-сцене */
+  }
+
+  .hero__header a,
+  .hero__header button,
+  .hero__burger,
+  .hero__bottom a {
+    pointer-events: auto;
+  }
+
+  .hero a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .hero__avatar img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .hero__title,
+  .hero__name {
+    display: flex;
+    flex-direction: column;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+
+  .hero__stage {
+    position: relative;
+    z-index: 0;
+    aspect-ratio: 1792 / 2400;
+    transition: opacity 0.6s ease;
+  }
+
+  /* 3D готов — постер уходит */
+  .hero[data-mascot='ready'] .hero__stage {
+    opacity: 0;
+  }
+
+  .hero__stage :global(img) {
+    display: block;
+  }
+
+  .hero__mascot {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Логотипы в макете — один кадр 3000×2000, обрезанный рамкой 2,42 : 1 */
+  /* в макете логотипы лежат поверх маскота */
+  .hero__logos {
+    position: absolute;
+    top: 0;
+    z-index: 1;
+    aspect-ratio: 980 / 405;
+    overflow: hidden;
+  }
+
+  .hero__logos :global(img) {
+    position: absolute;
+    top: -36.54%;
+    left: -6.56%;
+    width: 115.87%;
+    max-width: none;
+    height: 186.91%;
+  }
+
+  .hero__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 42px;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+  }
+
+  .hero__cta:hover {
+    opacity: 0.88;
+  }
+
+  .hero__nav a,
+  .hero__contact {
+    transition: opacity 0.2s ease;
+  }
+
+  .hero__nav a:hover,
+  .hero__contact:hover {
+    opacity: 0.7;
+  }
+
+  /* ---------- мобильная раскладка (< 1024) — макет 393 ---------- */
+  @media (max-width: 1023.98px) {
+    /* свободное место делится как в макете: 111 px над сценой, 98 px под кнопкой */
+    .hero {
+      display: grid;
+      grid-template-rows: auto minmax(24px, 111fr) auto auto minmax(24px, 98fr);
+      min-height: 100svh;
+      padding: 48px 20px 0;
+    }
+
+    .hero__header {
+      grid-row: 1;
+    }
+
+    .hero__stage {
+      grid-row: 3;
+    }
+
+    .hero__bottom {
+      grid-row: 4;
+    }
+
+    .hero__header {
+      display: grid;
+      grid-template-columns: 31px 1fr 24px;
+      align-items: center;
+      min-height: 33px;
+    }
+
+    .hero__nav,
+    .hero__contact,
+    .hero__name {
+      display: none;
+    }
+
+    .hero__name-mobile {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      text-align: center;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hero__stage {
+      justify-self: center;
+      width: min(71.5vw, 32.9svh);
+    }
+
+    .hero__logos {
+      left: -15.66%;
+      width: 131.32%;
+      margin-top: -3.56%;
+    }
+
+    .hero__title {
+      gap: 0.146em;
+      font-size: min(12.21vw, 72px);
+    }
+
+    .hero__cta {
+      width: 100%;
+      margin-top: 24px;
+      padding: 20px 38px;
+      font-size: 16px;
+    }
+  }
+
+  /* ---------- ноутбук и десктоп (≥ 1024) ---------- */
+  @media (min-width: 1024px) {
+    /* 1024–1440: значения ноутбучного макета × (ширина / 1440); шрифты не мельче 14 px */
+    .hero {
+      --pad-x: 4.1667vw;
+      --pad-top: 3.4722vw;
+      --gap: 0.8333vw;
+      --avatar: 4.2361vw;
+      --nav-fs: max(14px, 1.25vw);
+      --contact-top: 3.4722vw;
+      --contact-fs: max(14px, 1.1111vw);
+      --cta-fs: max(14px, 1.1111vw);
+      --cta-py: 1.3889vw;
+      --cta-px: 2.6389vw;
+      --title-fs: 4.4444vw;
+      --bottom: 5.1389vw;
+      --mw: min(34.6528vw, 60.12svh);
+
+      height: 100svh;
+      min-height: 560px;
+    }
+
+    .hero__name-mobile,
+    .hero__burger {
+      display: none;
+    }
+
+    .hero__header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--gap);
+      padding: var(--pad-top) var(--pad-x) 0;
+    }
+
+    .hero__avatar {
+      width: var(--avatar);
+    }
+
+    .hero__nav ul {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      font-size: var(--nav-fs);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .hero__contact {
+      position: absolute;
+      top: var(--contact-top);
+      right: var(--pad-x);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border-bottom: 1px solid var(--color-accent);
+      color: var(--color-accent);
+      font-size: var(--contact-fs);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .hero__arrow--bold {
+      display: none;
+    }
+
+    /* Маскот по центру; ступни (88,96 % высоты PNG) — на линии низа заголовков */
+    .hero__stage {
+      position: absolute;
+      left: 50%;
+      bottom: calc(var(--bottom) - var(--mw) * 0.14788);
+      width: var(--mw);
+      transform: translateX(-50%);
+    }
+
+    .hero__logos {
+      left: -50.9%;
+      width: 196.39%;
+      margin-top: -12.63%;
+    }
+
+    .hero__bottom {
+      position: absolute;
+      inset: auto var(--pad-x) var(--bottom);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .hero__lead {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--gap);
+    }
+
+    .hero__cta {
+      order: -1;
+      padding: var(--cta-py) var(--cta-px);
+      font-size: var(--cta-fs);
+    }
+
+    .hero__title,
+    .hero__name {
+      gap: var(--gap);
+      font-size: var(--title-fs);
+      white-space: nowrap;
+    }
+
+    .hero__name {
+      text-align: right;
+      align-items: flex-end;
+    }
+  }
+
+  /* 1440–1920: плавно от ноутбучного макета к десктопному */
+  @media (min-width: 1440px) {
+    .hero {
+      --pad-x: calc(60px - 20 * (100vw - 1440px) / 480);
+      --pad-top: 50px;
+      --gap: 12px;
+      --avatar: calc(61px + 22 * (100vw - 1440px) / 480);
+      --nav-fs: calc(18px + 2 * (100vw - 1440px) / 480);
+      --contact-top: calc(50px + 20 * (100vw - 1440px) / 480);
+      --contact-fs: calc(16px + 4 * (100vw - 1440px) / 480);
+      --cta-fs: calc(16px + 4 * (100vw - 1440px) / 480);
+      --cta-py: 20px;
+      --cta-px: 38px;
+      --title-fs: calc(64px + 32 * (100vw - 1440px) / 480);
+      --bottom: calc(74px - 35 * (100vw - 1440px) / 480);
+      --mw: min(calc(499px + 191 * (100vw - 1440px) / 480), 71.875svh);
+    }
+  }
+
+  @media (min-width: 1680px) {
+    .hero__logos {
+      left: -37.97%;
+      width: 176.09%;
+      margin-top: -9.57%;
+    }
+
+    .hero__arrow--thin {
+      display: none;
+    }
+
+    .hero__arrow--bold {
+      display: block;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .hero {
+      --pad-x: 40px;
+      --avatar: 83px;
+      --nav-fs: 20px;
+      --contact-top: 70px;
+      --contact-fs: 20px;
+      --cta-fs: 20px;
+      --title-fs: 96px;
+      --bottom: 39px;
+      --mw: min(690px, 71.875svh);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__stage,
+    .hero__cta,
+    .hero__nav a,
+    .hero__contact {
+      transition: none;
+    }
+  }
+</style>

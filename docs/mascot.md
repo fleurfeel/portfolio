@@ -7,7 +7,8 @@
 
 | Файл | Что | Размер |
 |---|---|---|
-| `artem.glb` | маскот, skinned mesh, 17 костей, без анимаций (T-поза) | ~1,2 МБ |
+| `artem.glb` | маскот, skinned mesh, 17 костей, без анимаций (T-поза), текстуры 2048 | ~1,2 МБ |
+| `artem-mobile.glb` | то же, текстуры 1024 — для touch-устройств | ~1 МБ |
 | `tool-*.glb` | 8 логотипов инструментов: figma, claude, tilda, gpt, claude_code, git, yougile, flow | 95–250 КБ |
 
 Сжаты `npm run optimize:models` (gltf-transform): `EXT_meshopt_compression` + `KHR_mesh_quantization`, текстуры WebP
@@ -32,6 +33,17 @@
 - **Реплики** в пузыре у головы по клику по маскоту.
 
 Сцена: `PerspectiveCamera(fov 28)`, ACES tone mapping, RoomEnvironment, hemi + key + rim свет, мягкая тень-блоб текстурой вместо shadow map.
+
+## Как сделано на сайте
+
+- `src/components/hero/Hero.astro` — постер (`mascot.png` + кадр логотипов из Figma, AVIF/WebP через `astro:assets`).
+- `src/components/hero/Mascot.vue` — остров `client:idle`. three.js и модели грузятся **по первому действию пользователя**
+  (мышь, касание, скролл, клавиша): инициализация на мобильном CPU — сотни миллисекунд, а постер совпадает с первым кадром.
+  Без аппаратного WebGL (SwiftShader и т. п.) 3D не запускается вовсе.
+- `src/lib/mascot/math.ts` — кадрирование камеры по рамке постера, орбита, огибающие (покрыто тестами).
+- `src/lib/mascot/scene.ts` — сцена: инициализация разбита на короткие задачи (meshopt в воркерах, текстуры по одной, `compileAsync`).
+- Отличия от прототипа по просьбе: у логотипов нет подписей при наведении, орбита медленнее (0.2 вместо 0.32),
+  нет реплик-пузырей и скролл-сцены (в макете первый экран статичный).
 
 ## Что делать иначе (см. правила в CLAUDE.md)
 

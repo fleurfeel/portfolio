@@ -30,7 +30,7 @@ describe('дизайн-токены', () => {
 describe('правила кода', () => {
   // Цвета — только через токены: hex разрешён лишь в src/styles/global.css
   const files = walk(join(root, 'src')).filter(
-    (f) => /\.(astro|vue|ts|tsx|js|css)$/.test(f) && !f.endsWith(join('styles', 'global.css')) && !f.endsWith('.test.ts'),
+    (f) => /\.(astro|vue|ts|tsx|js|css|svg)$/.test(f) && !f.endsWith(join('styles', 'global.css')) && !f.endsWith('.test.ts'),
   );
 
   it.each(files.map((f) => [relative(root, f), f]))('нет hex-цветов в %s', (_name, file) => {
