@@ -2,7 +2,17 @@
 // Цель проекта: performance ≥ 90 на мобильном (бюджет, ломает `npm run check`) и ≥ 95 на десктопе.
 const { chromium } = require('playwright-core');
 
-// Chrome: CHROME_PATH → установленный Google Chrome → Chromium из Playwright (CI без Chrome)
+const { existsSync } = require('node:fs');
+const { join } = require('node:path');
+
+const BRAVE_PATHS = [
+  join(process.env.PROGRAMFILES || 'C:\Program Files', 'BraveSoftware', 'Brave-Browser', 'Application', 'brave.exe'),
+  join(process.env.LOCALAPPDATA || '', 'BraveSoftware', 'Brave-Browser', 'Application', 'brave.exe'),
+  '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+  '/usr/bin/brave-browser',
+];
+
+// Браузер: CHROME_PATH → Google Chrome → Brave → Chromium из Playwright (CI без браузеров)
 function chromePath() {
   if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
   try {
@@ -10,6 +20,8 @@ function chromePath() {
     const [installed] = Launcher.getInstallations();
     if (installed) return installed;
   } catch {}
+  const brave = BRAVE_PATHS.find((p) => existsSync(p));
+  if (brave) return brave;
   return chromium.executablePath();
 }
 

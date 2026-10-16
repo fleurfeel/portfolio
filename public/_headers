@@ -1,0 +1,14 @@
+# Cloudflare Pages: заголовки для статики
+# Файлы с хешем в имени (сборка Astro) — кэш навсегда
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Шрифты и 3D-модели без хеша в имени — неделя, потом перепроверка
+/fonts/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/models/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

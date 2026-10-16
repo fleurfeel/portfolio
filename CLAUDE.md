@@ -1,13 +1,14 @@
 # Портфолио продуктового дизайнера
 
-Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (только для островов, например калькулятора) · деплой на Vercel.
+Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (только для островов, например калькулятора) · деплой на Cloudflare Pages (из GitHub `fleurfeel/portfolio`, ветка `main`).
 
 ## Команды
 
-- `npm run dev` — dev-сервер (http://localhost:4321)
+- `npm run dev` — dev-сервер (http://127.0.0.1:4321 — открывать по IP: loopback ::1 на этой машине заблокирован)
 - `npm run check` — проверка файлов > 10 МБ, `astro check`, Vitest, сборка, Playwright, Lighthouse CI (мобильный + десктоп)
 - `npm run test:watch` — Vitest в watch-режиме (для TDD)
 - `npm run optimize:models` — пересобрать `public/models/*.glb` из `reference/`
+- Lighthouse ищет браузер так: `CHROME_PATH` → Google Chrome → Brave → Chromium из Playwright
 
 ## Структура
 
@@ -15,6 +16,7 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 - `src/layouts/BaseLayout.astro` — базовый лейаут (lang="ru", meta, preload шрифта)
 - `public/fonts/` — Jura, вариативный woff2, subset latin + cyrillic
 - `public/models/` — сжатые GLB (meshopt + WebP)
+- `public/_headers` — заголовки кэша для Cloudflare Pages; `.node-version` — версия Node для сборки
 - `docs/mascot.md` — разбор прототипа маскота: риг, анимации, параметры
 - `tests/unit/` — Vitest, `tests/e2e/` — Playwright, `lighthouserc.cjs` — бюджет Lighthouse
 
