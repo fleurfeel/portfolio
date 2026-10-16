@@ -8,7 +8,6 @@ import Burger from '../../assets/icons/burger.svg';
 import avatar from '../../assets/hero/avatar.png';
 import logos from '../../assets/hero/logos.png';
 import mascot from '../../assets/hero/mascot.png';
-import Mascot from './Mascot.vue';
 import MobileMenu from './MobileMenu.vue';
 
 const links = [
@@ -73,13 +72,12 @@ const contact = { href: '#contact', label: 'Связаться со мной' };
       sizes="(min-width: 1920px) 690px, (min-width: 1024px) 36vw, 72vw"
       alt="Маскот Руслана — кудрявый 3D-персонаж"
       class="hero__mascot"
-      data-mascot-poster
+      data-mascot-poster="hero"
+      data-bounds="mascot"
       loading="eager"
       fetchpriority="high"
     />
   </div>
-
-  <Mascot client:idle />
 
 
   <div class="hero__bottom">
@@ -100,10 +98,10 @@ const contact = { href: '#contact', label: 'Связаться со мной' };
 
 <style>
   /* ---------- общее ---------- */
+  /* фон — у страницы: под первым экраном лежит общий 3D-канвас сцены */
   .hero {
     position: relative;
     overflow: clip;
-    background: var(--color-bg);
     color: var(--color-text);
   }
 
@@ -150,7 +148,7 @@ const contact = { href: '#contact', label: 'Связаться со мной' };
   }
 
   /* 3D готов — постер уходит */
-  .hero[data-mascot='ready'] .hero__stage {
+  :global([data-stage][data-mascot='ready']) .hero__stage {
     opacity: 0;
   }
 
@@ -348,10 +346,9 @@ const contact = { href: '#contact', label: 'Связаться со мной' };
     /* Маскот по центру; ступни (88,96 % высоты PNG) — на линии низа заголовков */
     .hero__stage {
       position: absolute;
-      left: 50%;
+      left: calc(50% - var(--mw) / 2); /* без transform: 3D меряет постер по offset* */
       bottom: calc(var(--bottom) - var(--mw) * 0.14788);
       width: var(--mw);
-      transform: translateX(-50%);
     }
 
     .hero__logos {

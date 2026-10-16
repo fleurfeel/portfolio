@@ -19,6 +19,8 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 - Прод: https://portfolio-d4l.pages.dev (`site` в astro.config.mjs)
 - `public/_headers` — заголовки кэша для Cloudflare Pages; `.node-version` — версия Node для сборки
 - `docs/mascot.md` — разбор прототипа маскота: риг, анимации, параметры
+- `src/components/stage/` — скролл-сцена: первый экран и «Избранные проекты» слоями в одном sticky-экране, пролёт и карусель (`Stage.vue`, математика в `src/lib/stage/math.ts`)
+- `src/data/projects.ts` — кейсы (пока заглушки), страницы `/projects` и `/projects/[slug]`
 - `tests/unit/` — Vitest, `tests/e2e/` — Playwright, `lighthouserc.cjs` — бюджет Lighthouse
 
 ## Правила
@@ -28,7 +30,7 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 - JS только в Astro-островах. По умолчанию — 0 KB клиентского JS.
 - 3D-маскот: Three.js + GLTFLoader + MeshoptDecoder. Сначала статичная картинка (AVIF), 3D — через `client:idle`. Один WebGLRenderer на весь сайт. Пауза рендера вне viewport. Без слежения за курсором на touch и при `prefers-reduced-motion`. pixelRatio не выше 2.
 - Изображения — только через `astro:assets`.
-- Анимации — только `transform`/`opacity`, всегда уважать `prefers-reduced-motion`.
+- Анимации — только `transform`/`opacity`, всегда уважать `prefers-reduced-motion`. Исключение (согласовано): `filter: blur` в пролёте «первый экран → проекты» (`Stage.vue`), при reduced motion выключен.
 - Цвета и шрифты — только через токены, никаких hex в компонентах (проверяется тестом `tests/unit/tokens.test.ts`). Нужен новый цвет — сначала спросить и добавить токен в `@theme`.
 - Сложные эффекты (spotlight, mix-blend, кастомные анимации) — обычный CSS в `<style>` компонента, на `var(--color-…)`.
 - Логика (калькулятор и любые расчёты) — по TDD: сначала тесты в Vitest, потом код.

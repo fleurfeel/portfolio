@@ -1,11 +1,21 @@
 // Чистая математика 3D-маскота: без three.js и DOM, чтобы покрывать тестами.
 
+export interface PosterBounds {
+  /** макушка, ступни, глаза — доли высоты картинки; центр — доля ширины */
+  top: number;
+  bottom: number;
+  eye: number;
+  centerX: number;
+}
+
 /**
  * Где на PNG-постере (src/assets/hero/mascot.png, 1792×2400) находится сам маскот —
- * доли от размеров картинки, замерены по альфа-каналу. Ступни (bottom) в макете
- * стоят ровно на линии низа заголовков.
+ * замерено по альфа-каналу. Ступни (bottom) в макете первого экрана стоят ровно на линии низа заголовков.
  */
-export const MASCOT_POSTER_BOUNDS = { top: 182 / 2400, bottom: 2135 / 2400, centerX: (47 + 1725) / 2 / 1792 } as const;
+export const MASCOT_POSTER_BOUNDS: PosterBounds = { top: 182 / 2400, bottom: 2135 / 2400, eye: 0.48, centerX: (47 + 1725) / 2 / 1792 };
+
+/** Рендер для экрана проектов (src/assets/hero/avatar.png, 1215×1295). */
+export const AVATAR_POSTER_BOUNDS: PosterBounds = { top: 14 / 1295, bottom: 1255 / 1295, eye: 0.494, centerX: (64 + 1141) / 2 / 1215 };
 
 export interface Rect {
   left: number;
@@ -15,12 +25,18 @@ export interface Rect {
 }
 
 /** Целевая рамка маскота на экране (в px канваса) по рамке PNG-постера. */
-export function posterTarget(poster: Rect) {
+export function posterTarget(poster: Rect, bounds: PosterBounds = MASCOT_POSTER_BOUNDS) {
   return {
-    top: poster.top + poster.height * MASCOT_POSTER_BOUNDS.top,
-    bottom: poster.top + poster.height * MASCOT_POSTER_BOUNDS.bottom,
-    centerX: poster.left + poster.width * MASCOT_POSTER_BOUNDS.centerX,
+    top: poster.top + poster.height * bounds.top,
+    bottom: poster.top + poster.height * bounds.bottom,
+    eyeY: poster.top + poster.height * bounds.eye,
+    centerX: poster.left + poster.width * bounds.centerX,
   };
+}
+
+/** Высота глаз 3D-модели от ступней при росте H — та же доля роста, что на постере. */
+export function eyeHeight(modelHeight: number, bounds: PosterBounds = MASCOT_POSTER_BOUNDS) {
+  return (modelHeight * (bounds.bottom - bounds.eye)) / (bounds.bottom - bounds.top);
 }
 
 export interface FitTarget {

@@ -21,7 +21,9 @@ import {
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { clampPixelRatio, damp, envelope, fitCamera, orbitPosition, posterTarget } from './math';
+import type { TransitionState } from '../stage/math';
+import { zoomCamera } from '../stage/math';
+import { type PosterBounds, type Rect, clampPixelRatio, damp, envelope, eyeHeight, fitCamera, orbitPosition, posterTarget } from './math';
 import { getRenderer } from './renderer';
 
 // Риг и анимации — по прототипу (см. docs/mascot.md); подписей у логотипов нет, орбита медленнее.
@@ -30,6 +32,10 @@ const FOV = 28;
 const ORBIT_SPEED = 0.2; // в прототипе 0.32
 const ARMS_DOWN = 1.2; // модель в T-позе — руки опускаем костями
 const IDLE_AFTER_MS = 6000;
+/** во сколько раз сильнее DOM-слоя приближается 3D при пролёте — чтобы камера прошла сквозь голову */
+const FLY_BOOST = 2.5;
+/** поза «показывает на проекты»: левая рука (справа на экране) почти горизонтально */
+const POINT = { upper: 0.45, fore: 0.05, hand: 0.15, yaw: 0.35, body: 0.25 };
 
 /** Отдать поток браузеру между тяжёлыми шагами, чтобы не было одной длинной задачи. */
 const yieldToMain = () =>
@@ -44,12 +50,19 @@ export interface MascotSceneOptions {
   modelUrl: string;
   /** слой, в который встаёт canvas; по его размеру считается кадр */
   container: HTMLElement;
-  /** PNG-постер: 3D-маскот встаёт ровно на его место */
-  poster: HTMLElement;
+  /** рамки PNG-постеров относительно container (без учёта transform): 3D встаёт ровно на их место */
+  measure: () => { hero: PosterInfo; projects: PosterInfo | null };
+  /** состояние пролёта «первый экран → проекты» */
+  getTransition: () => TransitionState;
   /** следить за курсором (только мышь и без prefers-reduced-motion) */
   trackCursor: boolean;
   reducedMotion: boolean;
   onReady: () => void;
+}
+
+export interface PosterInfo {
+  rect: Rect;
+  bounds: PosterBounds;
 }
 
 interface Bones {
@@ -71,7 +84,7 @@ interface Logo {
   kick: number;
 }
 
-export async function createMascotScene({ modelUrl, container, poster, trackCursor, reducedMotion, onReady }: MascotSceneOptions) {
+export async function createMascotScene({ modelUrl, container, measure, getTransition, trackCursor, reducedMotion, onReady }: MascotSceneOptions) {
   const renderer = getRenderer();
   const canvas = renderer.domElement;
   canvas.style.cssText = 'display:block;width:100%;height:100%;touch-action:pan-y';
@@ -180,7 +193,11 @@ export async function createMascotScene({ modelUrl, container, poster, trackCurs
   });
   const logoHolders = logos.map((l) => l.holder);
 
-  // --- кадр: маскот ровно на месте постера
+  // --- кадры: маскот ровно на месте постеров первого экрана и экрана проектов
+  type Fit = ReturnType<typeof fitCamera>;
+  let fitHero: Fit = { distance: 3, x: 0, y: H / 2 };
+  let fitProjects: Fit | null = null;
+  const eye = { x: 0, y: eyeHeight(H), z: 0 };
   let radius = H * 0.6;
   function layout() {
     const w = container.clientWidth;
@@ -190,12 +207,23 @@ export async function createMascotScene({ modelUrl, container, poster, trackCurs
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    const c = container.getBoundingClientRect();
-    const p = poster.getBoundingClientRect();
-    const target = posterTarget({ left: p.left - c.left, top: p.top - c.top, width: p.width, height: p.height });
-    const fit = fitCamera({ width: w, height: h, ...target }, H, FOV);
-    camera.position.set(fit.x, fit.y, fit.distance);
+    const { hero, projects } = measure();
+    fitHero = fitCamera({ width: w, height: h, ...posterTarget(hero.rect, hero.bounds) }, H, FOV);
+    fitProjects = projects ? fitCamera({ width: w, height: h, ...posterTarget(projects.rect, projects.bounds) }, H, FOV) : null;
     radius = H * (w < 1024 ? 0.5 : 0.6);
+    placeCamera();
+  }
+
+  // пролёт: камера летит к глазам и проходит сквозь голову, затем «подлетает» к маскоту на экране проектов
+  let transition = getTransition();
+  function placeCamera() {
+    transition = getTransition();
+    const onProjects = transition.phase === 'projects' && fitProjects;
+    const fit = onProjects ? fitProjects! : fitHero;
+    const s = onProjects ? transition.projectsScale : 1 + (transition.heroScale - 1) * FLY_BOOST;
+    const c = zoomCamera({ x: fit.x, y: fit.y, z: fit.distance }, eye, s);
+    camera.position.set(c.x, c.y, c.z);
+    orbit.visible = transition.phase === 'hero';
   }
 
   // --- ввод
@@ -271,7 +299,9 @@ export async function createMascotScene({ modelUrl, container, poster, trackCurs
     yaw = damp(yaw, tx * 0.55, 4, dt);
     pitch = damp(pitch, -ty * 0.14, 4, dt);
 
-    rig.rotation.y = yaw * 0.35;
+    placeCamera();
+    const point = transition.pointing;
+    rig.rotation.y = yaw * 0.35 + POINT.body * point;
     if (bones.head) {
       let nod = 0;
       if (nodT >= 0) {
@@ -280,7 +310,7 @@ export async function createMascotScene({ modelUrl, container, poster, trackCurs
         if (u >= 1) nodT = -1;
         else nod = Math.sin(u * Math.PI * 2) * 0.18 * (1 - u);
       }
-      bones.head.rotation.set(pitch * 1.4 + nod, yaw * 0.95, -yaw * 0.1);
+      bones.head.rotation.set(pitch * 1.4 + nod, yaw * 0.95 + POINT.yaw * point, -yaw * 0.1);
     }
     if (bones.spine) bones.spine.rotation.y = yaw * 0.15;
 
@@ -301,6 +331,10 @@ export async function createMascotScene({ modelUrl, container, poster, trackCurs
         hL = e * Math.sin(waveT * 11 + 0.6) * 0.25;
       }
     }
+    // на экране проектов рука плавно поднимается в сторону карточек
+    uL += (POINT.upper - uL) * point;
+    fL += (POINT.fore - fL) * point;
+    hL += (POINT.hand - hL) * point;
     if (bones.uL) bones.uL.rotation.z = uL;
     if (bones.fL) bones.fL.rotation.z = fL;
     if (bones.hL) bones.hL.rotation.z = hL;
@@ -422,7 +456,17 @@ export async function createMascotScene({ modelUrl, container, poster, trackCurs
   render();
   sync();
 
+  let pending = 0;
   return {
+    /** перерисовать кадр, если цикл стоит (prefers-reduced-motion): скролл меняет кадр */
+    invalidate() {
+      if (raf || pending || !inView) return;
+      pending = requestAnimationFrame(() => {
+        pending = 0;
+        update(0, elapsed);
+        render();
+      });
+    },
     dispose() {
       stop();
       io.disconnect();

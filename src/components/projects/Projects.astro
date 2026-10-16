@@ -1,0 +1,412 @@
+---
+// «Избранные проекты». Макеты Figma: Mobile 393 (448:458), Laptop 1440 (447:380), Desktop 1920 (447:400).
+// Карточки стоят на дуге вокруг активной; позиции для активной = 0 считаются при сборке,
+// дальше их двигает остров Stage.vue по скроллу. Маскот здесь — постер, 3D встаёт на его место.
+import { Picture } from 'astro:assets';
+import ArrowRightLong from '../../assets/icons/arrow-right-long.svg';
+import avatar from '../../assets/hero/avatar.png';
+import mascot from '../../assets/hero/mascot.png';
+import { projectUrl, projects } from '../../data/projects';
+import { CARDS_DESKTOP, CARDS_MOBILE, cardPose, formatCounter } from '../../lib/stage/math';
+
+const cardVars = (i: number) => {
+  const d = cardPose(i, CARDS_DESKTOP);
+  const m = cardPose(i, CARDS_MOBILE);
+  return `--cx-d:${d.x};--cy-d:${d.y};--cs-d:${d.scale};--co-d:${d.opacity};--cx-m:${m.x};--cy-m:${m.y};--cs-m:${m.scale};--co-m:${m.opacity}`;
+};
+---
+
+<section class="projects" aria-labelledby="projects-title">
+  <h2 id="projects-title" class="projects__title">Избранные проекты</h2>
+
+  <div class="projects__mascot" data-poster-stage>
+    <Picture
+      src={avatar}
+      formats={['avif', 'webp']}
+      widths={[400, 600, 900, 1215]}
+      sizes="(min-width: 1920px) 621px, 35vw"
+      alt=""
+      class="projects__poster projects__poster--lg"
+      data-mascot-poster="projects"
+      data-bounds="avatar"
+      loading="lazy"
+    />
+    <Picture
+      src={mascot}
+      formats={['avif', 'webp']}
+      widths={[150, 300, 450]}
+      sizes="33vw"
+      alt=""
+      class="projects__poster projects__poster--m"
+      data-mascot-poster="projects"
+      data-bounds="mascot"
+      loading="lazy"
+    />
+  </div>
+
+  <ol class="projects__cards">
+    {
+      projects.map((project, i) => (
+        <li class="projects__card" data-card={i} style={cardVars(i)}>
+          <a href={projectUrl(project)} aria-label={`${project.title}, кейс ${i + 1}`}>
+            <span class="projects__image" />
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+
+  <div class="projects__info">
+    <div class="projects__items">
+      {
+        projects.map((project, i) => (
+          <div class="projects__item" data-info={i} data-active={i === 0 ? '' : undefined} inert={i !== 0}>
+            <p class="projects__counter">{formatCounter(i, projects.length)}</p>
+            <h3 class="projects__name">{project.title}</h3>
+            <p class="projects__summary">{project.summary}</p>
+            <a class="projects__cta" href={projectUrl(project)}>
+              Посмотреть полностью
+            </a>
+          </div>
+        ))
+      }
+    </div>
+    <a class="projects__all" href="/projects">
+      Посмотреть все проекты
+      <ArrowRightLong />
+    </a>
+  </div>
+</section>
+
+<style>
+  .projects {
+    position: relative;
+    height: 100svh;
+    min-height: 560px;
+    overflow: clip;
+    color: var(--color-text);
+    pointer-events: none; /* пустые места пропускают клики к 3D-сцене */
+  }
+
+  .projects a {
+    pointer-events: auto;
+  }
+
+  .projects a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .projects__title {
+    position: absolute;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .projects__mascot {
+    position: absolute;
+    transition: opacity 0.6s ease;
+  }
+
+  /* 3D готов — постер уходит */
+  :global([data-stage][data-mascot='ready']) .projects__mascot {
+    opacity: 0;
+  }
+
+  .projects__mascot :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .projects__cards {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Карточка стоит центром в (--card-x, --card-y); смещение по дуге — в px макета × --u */
+  .projects__card {
+    position: absolute;
+    left: calc(var(--card-x) - var(--card-w) / 2);
+    top: calc(var(--card-y) - var(--card-h) / 2);
+    width: var(--card-w);
+    height: var(--card-h);
+    transform: translate(calc(var(--cx) * var(--u)), calc(var(--cy) * var(--u))) scale(var(--cs));
+    opacity: var(--co);
+    will-change: transform, opacity;
+  }
+
+  .projects__card a {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .projects__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--card-r);
+    /* заглушка вместо картинки кейса */
+    background: color-mix(in srgb, var(--color-secondary) 18%, var(--color-bg));
+    transition: opacity 0.2s ease;
+  }
+
+  .projects__card a:hover .projects__image {
+    opacity: 0.85;
+  }
+
+  .projects__items {
+    display: grid;
+  }
+
+  .projects__item {
+    display: flex;
+    flex-direction: column;
+    grid-area: 1 / 1;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.3s ease,
+      visibility 0.3s;
+  }
+
+  .projects__item[data-active] {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .projects__counter {
+    color: var(--color-accent);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .projects__name {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+  }
+
+  .projects__summary {
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .projects__cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 42px;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    font-weight: 600;
+    line-height: 1.2;
+    transition: opacity 0.2s ease;
+  }
+
+  .projects__cta:hover {
+    opacity: 0.88;
+  }
+
+  .projects__all {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    gap: 8px;
+    margin-top: 8px;
+    border-bottom: 1px solid var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    transition: opacity 0.2s ease;
+  }
+
+  .projects__all:hover {
+    opacity: 0.7;
+  }
+
+  /* ---------- мобильная раскладка (< 1024) — макет 393×852, всё × --u ---------- */
+  @media (max-width: 1023.98px) {
+    .projects {
+      --u: min(100vw / 393, 100svh / 852);
+      --frame-left: calc(50% - 196.5 * var(--u));
+      --card-x: 50%;
+      --card-y: calc(444.5 * var(--u));
+      --card-w: calc(352 * var(--u));
+      --card-h: calc(225 * var(--u));
+      --card-r: calc(18 * var(--u));
+      --cx: var(--cx-m);
+      --cy: var(--cy-m);
+      --cs: var(--cs-m);
+      --co: var(--co-m);
+    }
+
+    .projects__title {
+      top: calc(60 * var(--u));
+      left: 50%;
+      font-size: calc(32 * var(--u));
+      transform: translateX(-50%);
+    }
+
+    .projects__mascot {
+      top: calc(148 * var(--u));
+      left: calc(var(--frame-left) + 18.9 * var(--u));
+      width: calc(128 * var(--u));
+    }
+
+    .projects__mascot :global(.projects__poster--lg) {
+      display: none;
+    }
+
+    .projects__info {
+      position: absolute;
+      top: calc(569 * var(--u));
+      left: calc(var(--frame-left) + 20 * var(--u));
+      width: calc(353 * var(--u));
+      text-align: center;
+    }
+
+    .projects__item {
+      gap: calc(8 * var(--u));
+    }
+
+    .projects__counter,
+    .projects__cta,
+    .projects__all {
+      display: none;
+    }
+
+    .projects__name {
+      font-size: calc(24 * var(--u));
+    }
+
+    .projects__summary {
+      font-size: calc(14 * var(--u));
+    }
+  }
+
+  /* ---------- ноутбук и десктоп (≥ 1024) ---------- */
+  @media (min-width: 1024px) {
+    /* 1024–1440: значения ноутбучного макета × (ширина / 1440) */
+    .projects {
+      --u: calc(100vw / 1440);
+      --pad-x: 4.1667vw;
+      --title-fs: 4.0278vw;
+      --title-top: 9.1667vw;
+      --mascot-w: min(34.375vw, 55svh);
+      --mascot-bottom: 9.56svh;
+      --card-x: calc(43.0556vw + 156 * var(--u));
+      --card-y: 50%;
+      --info-w: 27.0833vw;
+      --info-top: 21.3889vw;
+      --counter-fs: max(14px, 1.25vw);
+      --name-fs: 2.2222vw;
+      --summary-fs: max(14px, 1.25vw);
+      --cta-fs: max(14px, 1.1111vw);
+      --cta-py: 1.3889vw;
+      --card-w: calc(312 * var(--u));
+      --card-h: calc(200 * var(--u));
+      --card-r: calc(24 * var(--u));
+      --cx: var(--cx-d);
+      --cy: var(--cy-d);
+      --cs: var(--cs-d);
+      --co: var(--co-d);
+    }
+
+    .projects__title {
+      top: var(--title-top);
+      left: var(--pad-x);
+      font-size: var(--title-fs);
+    }
+
+    .projects__mascot {
+      left: var(--pad-x);
+      bottom: var(--mascot-bottom);
+      width: var(--mascot-w);
+    }
+
+    .projects__mascot :global(.projects__poster--m) {
+      display: none;
+    }
+
+    .projects__info {
+      position: absolute;
+      top: var(--info-top);
+      right: var(--pad-x);
+      display: flex;
+      flex-direction: column;
+      width: var(--info-w);
+    }
+
+    .projects__counter {
+      font-size: var(--counter-fs);
+    }
+
+    .projects__name {
+      margin-top: 8px;
+      font-size: var(--name-fs);
+    }
+
+    .projects__summary {
+      margin-top: 16px;
+      font-size: var(--summary-fs);
+    }
+
+    .projects__cta {
+      margin-top: 20px;
+      padding: var(--cta-py) 38px;
+      font-size: var(--cta-fs);
+    }
+  }
+
+  /* 1440–1920: плавно от ноутбучного макета (×1) к десктопному (×1,5) */
+  @media (min-width: 1440px) {
+    .projects {
+      --u: calc(1px + (100vw - 1440px) / 960);
+      --pad-x: calc(60px - 20 * (100vw - 1440px) / 480);
+      --title-fs: calc(58px + 6 * (100vw - 1440px) / 480);
+      --title-top: 132px;
+      --mascot-w: min(calc(495px + 126 * (100vw - 1440px) / 480), 64.69svh);
+      --mascot-bottom: calc(86px - 34 * (100vw - 1440px) / 480);
+      --card-x: calc(620px + 231 * (100vw - 1440px) / 480 + 156 * var(--u));
+      --card-y: calc(50% + 13.5 * (100vw - 1440px) / 480);
+      --info-w: calc(390px + 52 * (100vw - 1440px) / 480);
+      --info-top: 308px;
+      --counter-fs: 18px;
+      --name-fs: calc(32px + 4 * (100vw - 1440px) / 480);
+      --summary-fs: calc(18px + 2 * (100vw - 1440px) / 480);
+      --cta-fs: calc(16px + 4 * (100vw - 1440px) / 480);
+      --cta-py: 20px;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .projects {
+      --u: 1.5px;
+      --pad-x: 40px;
+      --title-fs: 64px;
+      --mascot-w: min(621px, 64.69svh);
+      --mascot-bottom: 52px;
+      --card-x: calc(851px + 156 * var(--u));
+      --card-y: calc(50% + 13.5px);
+      --info-w: 442px;
+      --name-fs: 36px;
+      --summary-fs: 20px;
+      --cta-fs: 20px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .projects__mascot,
+    .projects__image,
+    .projects__item,
+    .projects__cta,
+    .projects__all {
+      transition: none;
+    }
+  }
+</style>

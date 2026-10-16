@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('первый экран', () => {
   test('постер маскота виден сразу, логотипы поверх него', async ({ page }) => {
     await page.goto('/');
-    const poster = page.locator('[data-mascot-poster]');
+    const poster = page.locator('[data-mascot-poster="hero"]');
     await expect(poster).toBeVisible();
     expect(await poster.evaluate((img: HTMLImageElement) => img.currentSrc)).toMatch(/\.(avif|webp)/);
   });

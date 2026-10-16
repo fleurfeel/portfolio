@@ -45,6 +45,7 @@ const close = () => panel.value?.hidePopover?.();
 }
 
 .menu {
+  pointer-events: auto; /* слой сцены вокруг пропускает клики */
   inset: 96px 0 0;
   width: 100%;
   height: auto;

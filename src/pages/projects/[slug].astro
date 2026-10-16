@@ -1,0 +1,94 @@
+---
+// Страница кейса — заглушка до макета.
+import ArrowRightLong from '../../assets/icons/arrow-right-long.svg';
+import { projectUrl, projects } from '../../data/projects';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatCounter } from '../../lib/stage/math';
+
+export function getStaticPaths() {
+  return projects.map((project, index) => ({ params: { slug: project.slug }, props: { project, index } }));
+}
+
+const { project, index } = Astro.props;
+const next = projects[(index + 1) % projects.length]!;
+---
+
+<BaseLayout title={`${project.title} — кейс | Пашковский Руслан`} description={project.summary}>
+  <main class="case">
+    <nav class="case__nav" aria-label="Навигация по кейсам">
+      <a href="/">На главную</a>
+      <a href="/projects">Все проекты</a>
+    </nav>
+
+    <p class="case__counter">{formatCounter(index, projects.length)}</p>
+    <h1 class="case__title">{project.title}</h1>
+    <p class="case__summary">{project.summary}</p>
+    <div class="case__image" role="img" aria-label="Здесь будет обложка кейса"></div>
+
+    <a class="case__next" href={projectUrl(next)}>
+      Следующий проект
+      <ArrowRightLong />
+    </a>
+  </main>
+</BaseLayout>
+
+<style>
+  .case {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+
+  .case__nav {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    font-weight: 600;
+  }
+
+  .case a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .case__counter {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .case__title {
+    font-size: clamp(32px, 6vw, 64px);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+
+  .case__summary {
+    max-width: 640px;
+    color: var(--color-secondary);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .case__image {
+    aspect-ratio: 312 / 200;
+    margin-top: 24px;
+    border-radius: clamp(18px, 2.5vw, 36px);
+    background: color-mix(in srgb, var(--color-secondary) 18%, var(--color-bg));
+  }
+
+  .case__next {
+    display: inline-flex;
+    align-self: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    border-bottom: 1px solid var(--color-text);
+    font-weight: 600;
+  }
+</style>

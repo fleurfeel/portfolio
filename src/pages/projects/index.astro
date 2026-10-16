@@ -1,0 +1,97 @@
+---
+// Все проекты — заглушка до макета.
+import { projectUrl, projects } from '../../data/projects';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatCounter } from '../../lib/stage/math';
+---
+
+<BaseLayout title="Все проекты | Пашковский Руслан" description="Кейсы продуктового дизайнера Руслана Пашковского.">
+  <main class="all">
+    <nav class="all__nav" aria-label="Навигация">
+      <a href="/">На главную</a>
+    </nav>
+    <h1 class="all__title">Все проекты</h1>
+
+    <ul class="all__grid">
+      {
+        projects.map((project, i) => (
+          <li>
+            <a class="all__card" href={projectUrl(project)}>
+              <span class="all__image" />
+              <span class="all__counter">{formatCounter(i, projects.length)}</span>
+              <span class="all__name">{project.title}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </main>
+</BaseLayout>
+
+<style>
+  .all {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+
+  .all__nav {
+    margin-bottom: 48px;
+    font-weight: 600;
+  }
+
+  .all a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .all__title {
+    margin-bottom: 32px;
+    font-size: clamp(32px, 6vw, 64px);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+
+  .all__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 32px 24px;
+  }
+
+  .all__card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .all__image {
+    aspect-ratio: 312 / 200;
+    margin-bottom: 8px;
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--color-secondary) 18%, var(--color-bg));
+    transition: opacity 0.2s ease;
+  }
+
+  .all__card:hover .all__image {
+    opacity: 0.85;
+  }
+
+  .all__counter {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .all__name {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .all__image {
+      transition: none;
+    }
+  }
+</style>

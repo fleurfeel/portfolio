@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AVATAR_POSTER_BOUNDS,
   MASCOT_POSTER_BOUNDS,
+  eyeHeight,
   clampPixelRatio,
   damp,
   envelope,
@@ -53,6 +55,30 @@ describe('posterTarget', () => {
 
   it('ступни на рендере совпадают с низом заголовков в макете (756 px на ноутбуке)', () => {
     expect(posterTarget({ left: 470, top: 161, width: 499, height: 669 }).bottom).toBeCloseTo(756, 0);
+  });
+});
+
+describe('posterTarget для других постеров', () => {
+  it('учитывает поля конкретной картинки', () => {
+    const t = posterTarget({ left: 60, top: 286, width: 495, height: 528 }, AVATAR_POSTER_BOUNDS);
+    expect(t.top).toBeCloseTo(286 + 528 * AVATAR_POSTER_BOUNDS.top, 6);
+    expect(t.bottom).toBeCloseTo(286 + 528 * AVATAR_POSTER_BOUNDS.bottom, 6);
+    expect(t.centerX).toBeCloseTo(60 + 495 * AVATAR_POSTER_BOUNDS.centerX, 6);
+  });
+
+  it('точка глаз — между макушкой и ступнями', () => {
+    const t = posterTarget({ left: 0, top: 0, width: 100, height: 200 });
+    expect(t.eyeY).toBeGreaterThan(t.top);
+    expect(t.eyeY).toBeLessThan(t.bottom);
+  });
+});
+
+describe('eyeHeight', () => {
+  it('высота глаз в мире согласована с точкой глаз на постере', () => {
+    const t = posterTarget({ left: 0, top: 0, width: 100, height: 200 });
+    const H = 0.98;
+    // доля роста от ступней до глаз одинакова на постере и в 3D
+    expect(eyeHeight(H)).toBeCloseTo((H * (t.bottom - t.eyeY)) / (t.bottom - t.top), 6);
   });
 });
 
