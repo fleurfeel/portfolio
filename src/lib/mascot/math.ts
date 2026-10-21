@@ -99,6 +99,11 @@ export function clampPixelRatio(dpr: number) {
   return Math.min(2, Math.max(1, dpr));
 }
 
+/** Сглаживание (MSAA) — только при pixelRatio < 1,5: на плотных экранах лесенки не видно, а буфер огромный. */
+export function shouldAntialias(dpr: number) {
+  return clampPixelRatio(dpr) < 1.5;
+}
+
 export function shouldTrackCursor({ canHover, reducedMotion }: { canHover: boolean; reducedMotion: boolean }) {
   return canHover && !reducedMotion;
 }

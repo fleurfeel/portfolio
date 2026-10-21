@@ -7,6 +7,8 @@ import {
   HemisphereLight,
   Mesh,
   MeshBasicMaterial,
+  MeshPhysicalMaterial,
+  MeshStandardMaterial,
   type Object3D,
   PerspectiveCamera,
   PlaneGeometry,
@@ -58,6 +60,38 @@ export interface MascotSceneOptions {
   trackCursor: boolean;
   reducedMotion: boolean;
   onReady: () => void;
+}
+
+/**
+ * KHR_materials_specular превращает материал в MeshPhysicalMaterial — его шейдер
+ * компилируется в ANGLE/Direct3D до секунды и дороже на пиксель. Визуально разница
+ * от specular незаметна, поэтому берём стандартный PBR.
+ */
+function toStandard(root: Object3D) {
+  root.traverse((o) => {
+    if (!(o instanceof Mesh) || !(o.material instanceof MeshPhysicalMaterial)) return;
+    const m = o.material;
+    o.material = new MeshStandardMaterial({
+      name: m.name,
+      color: m.color,
+      map: m.map,
+      normalMap: m.normalMap,
+      normalScale: m.normalScale,
+      roughness: m.roughness,
+      roughnessMap: m.roughnessMap,
+      metalness: m.metalness,
+      metalnessMap: m.metalnessMap,
+      aoMap: m.aoMap,
+      emissive: m.emissive,
+      emissiveMap: m.emissiveMap,
+      emissiveIntensity: m.emissiveIntensity,
+      transparent: m.transparent,
+      opacity: m.opacity,
+      alphaTest: m.alphaTest,
+      side: m.side,
+    });
+    m.dispose();
+  });
 }
 
 export interface PosterInfo {
@@ -129,6 +163,7 @@ export async function createMascotScene({ modelUrl, container, measure, getTrans
   scene.add(ground);
 
   const [artem, ...tools] = await loading;
+  for (const o of [artem, ...tools]) toStandard(o);
   await yieldToMain();
 
   // --- маскот: рост 0.98, ступни на y=0, центр по X/Z

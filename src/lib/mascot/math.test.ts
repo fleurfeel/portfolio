@@ -10,6 +10,7 @@ import {
   isSoftwareRenderer,
   orbitPosition,
   posterTarget,
+  shouldAntialias,
   shouldTrackCursor,
 } from './math';
 
@@ -139,6 +140,17 @@ describe('clampPixelRatio', () => {
     expect(clampPixelRatio(1.5)).toBe(1.5);
     expect(clampPixelRatio(0.5)).toBe(1);
     expect(clampPixelRatio(Number.NaN)).toBe(1);
+  });
+});
+
+describe('shouldAntialias', () => {
+  it('MSAA только на обычных экранах: на плотных он душит GPU и не нужен', () => {
+    expect(shouldAntialias(1)).toBe(true);
+    expect(shouldAntialias(1.25)).toBe(true);
+    expect(shouldAntialias(1.5)).toBe(false);
+    expect(shouldAntialias(2)).toBe(false);
+    expect(shouldAntialias(3)).toBe(false);
+    expect(shouldAntialias(Number.NaN)).toBe(true);
   });
 });
 
