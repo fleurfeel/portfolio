@@ -324,6 +324,7 @@ const cardVars = (i: number) => {
       --card-x: calc(43.0556vw + 156 * var(--u));
       --card-y: 50%;
       --info-w: 27.0833vw;
+      --info-right: var(--pad-x);
       --info-top: 21.3889vw;
       --counter-fs: max(14px, 1.25vw);
       --name-fs: 2.2222vw;
@@ -359,7 +360,7 @@ const cardVars = (i: number) => {
     .projects__info {
       position: absolute;
       top: var(--info-top);
-      right: var(--pad-x);
+      right: var(--info-right);
       display: flex;
       flex-direction: column;
       width: var(--info-w);
@@ -395,9 +396,11 @@ const cardVars = (i: number) => {
       --title-top: 132px;
       --mascot-w: min(calc(495px + 126 * (100vw - 1440px) / 480), 64.69svh);
       --mascot-bottom: calc(86px - 34 * (100vw - 1440px) / 480);
-      --card-x: calc(620px + 231 * (100vw - 1440px) / 480 + 156 * var(--u));
+      /* на десктопе инфо отодвинуто от края до 155 px — дуга карточек сдвинута на столько же (851 → 736) */
+      --card-x: calc(620px + 116 * (100vw - 1440px) / 480 + 156 * var(--u));
       --card-y: calc(50% + 13.5 * (100vw - 1440px) / 480);
       --info-w: calc(390px + 52 * (100vw - 1440px) / 480);
+      --info-right: calc(60px + 95 * (100vw - 1440px) / 480);
       --info-top: 308px;
       --counter-fs: 18px;
       --name-fs: calc(32px + 4 * (100vw - 1440px) / 480);
@@ -414,9 +417,10 @@ const cardVars = (i: number) => {
       --title-fs: 64px;
       --mascot-w: min(621px, 64.69svh);
       --mascot-bottom: 52px;
-      --card-x: calc(851px + 156 * var(--u));
+      --card-x: calc(736px + 156 * var(--u));
       --card-y: calc(50% + 13.5px);
       --info-w: 442px;
+      --info-right: 155px;
       --name-fs: 36px;
       --summary-fs: 20px;
       --cta-fs: 20px;
