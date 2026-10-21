@@ -8,7 +8,7 @@ import {
   stageHeight,
   stageProgress,
   transitionState,
-  zoomCamera,
+  lerpFit,
 } from './math';
 
 describe('stageProgress', () => {
@@ -40,48 +40,82 @@ describe('stageProgress', () => {
 });
 
 describe('transitionState', () => {
-  it('t=0 — виден только первый экран, без блюра', () => {
-    const s = transitionState(0, false);
-    expect(s).toMatchObject({ phase: 'hero', heroOpacity: 1, heroScale: 1, blur: 0, projectsOpacity: 0, pointing: 0 });
+  it('t=0 — виден первый экран, без блюра, маскот на месте, логотипы на орбите', () => {
+    expect(transitionState(0, false)).toMatchObject({
+      phase: 'hero',
+      heroOpacity: 1,
+      heroBlur: 0,
+      projectsOpacity: 0,
+      mascotMix: 0,
+      logos: 1,
+      pointing: 0,
+    });
   });
 
-  it('t=1 — виден только экран проектов, рука поднята', () => {
-    const s = transitionState(1, false);
-    expect(s).toMatchObject({ phase: 'projects', heroOpacity: 0, projectsOpacity: 1, projectsScale: 1, blur: 0, pointing: 1 });
+  it('t=1 — виден экран проектов без блюра, маскот слева и показывает рукой, логотипов нет', () => {
+    expect(transitionState(1, false)).toMatchObject({
+      phase: 'projects',
+      heroOpacity: 0,
+      projectsOpacity: 1,
+      projectsBlur: 0,
+      mascotMix: 1,
+      logos: 0,
+      pointing: 1,
+    });
   });
 
-  it('пролёт: первый экран растёт и размывается, максимум блюра в середине', () => {
-    const a = transitionState(0.25, false);
-    const mid = transitionState(0.49, false);
-    expect(a.heroScale).toBeGreaterThan(1);
-    expect(mid.heroScale).toBeGreaterThan(a.heroScale);
-    expect(mid.blur).toBeGreaterThan(a.blur);
-    expect(mid.blur).toBeLessThanOrEqual(STAGE.maxBlur);
+  it('без приближения: в состоянии нет масштаба слоёв', () => {
+    const s = transitionState(0.3, false);
+    expect(s).not.toHaveProperty('heroScale');
+    expect(s).not.toHaveProperty('projectsScale');
   });
 
-  it('после середины экран проектов приближается (масштаб растёт к 1)', () => {
-    const a = transitionState(0.6, false);
-    const b = transitionState(0.9, false);
-    expect(a.phase).toBe('projects');
-    expect(a.projectsScale).toBeLessThan(b.projectsScale);
-    expect(b.projectsScale).toBeLessThanOrEqual(1);
+  it('первый экран уходит в туман, экран проектов из него проявляется', () => {
+    const hero = [0.1, 0.25, 0.45].map((t) => transitionState(t, false));
+    expect(hero[0]!.heroBlur).toBeLessThan(hero[1]!.heroBlur);
+    expect(hero[1]!.heroBlur).toBeLessThan(hero[2]!.heroBlur);
+    expect(hero[2]!.heroOpacity).toBeLessThan(hero[0]!.heroOpacity);
+    const projects = [0.55, 0.75, 0.95].map((t) => transitionState(t, false));
+    expect(projects[0]!.projectsBlur).toBeGreaterThan(projects[1]!.projectsBlur);
+    expect(projects[1]!.projectsBlur).toBeGreaterThan(projects[2]!.projectsBlur);
+    for (const s of [...hero, ...projects]) {
+      expect(s.heroBlur).toBeLessThanOrEqual(STAGE.maxBlur);
+      expect(s.projectsBlur).toBeLessThanOrEqual(STAGE.maxBlur);
+    }
   });
 
-  it('prefers-reduced-motion: без масштаба и блюра, только смена прозрачности', () => {
+  it('маскот переезжает плавно и только вперёд', () => {
+    const mix = [0, 0.2, 0.4, 0.6, 0.8, 1].map((t) => transitionState(t, false).mascotMix);
+    for (let i = 1; i < mix.length; i++) expect(mix[i]).toBeGreaterThanOrEqual(mix[i - 1]!);
+    expect(mix[2]).toBeGreaterThan(0);
+    expect(mix[3]).toBeLessThan(1);
+  });
+
+  it('prefers-reduced-motion: без блюра, маскот переставляется без движения', () => {
     for (const t of [0, 0.2, 0.5, 0.7, 1]) {
       const s = transitionState(t, true);
-      expect(s.heroScale).toBe(1);
-      expect(s.projectsScale).toBe(1);
-      expect(s.blur).toBe(0);
+      expect(s.heroBlur).toBe(0);
+      expect(s.projectsBlur).toBe(0);
+      expect([0, 1]).toContain(s.mascotMix);
     }
     expect(transitionState(0.2, true).heroOpacity).toBe(1);
     expect(transitionState(0.8, true).projectsOpacity).toBe(1);
   });
 });
 
+describe('lerpFit', () => {
+  it('смешивает кадры камеры первого экрана и проектов', () => {
+    const a = { distance: 2, x: 0, y: 1 };
+    const b = { distance: 6, x: 2, y: -1 };
+    expect(lerpFit(a, b, 0)).toEqual(a);
+    expect(lerpFit(a, b, 1)).toEqual(b);
+    expect(lerpFit(a, b, 0.5)).toEqual({ distance: 4, x: 1, y: 0 });
+  });
+});
+
 describe('cardPose', () => {
   it('активная карточка — в центре, в полный размер', () => {
-    expect(cardPose(0, CARDS_DESKTOP)).toEqual({ x: 0, y: 0, scale: 1, opacity: 1 });
+    expect(cardPose(0, CARDS_DESKTOP)).toEqual({ x: 0, y: 0, scale: 1, opacity: 1, blur: 0 });
   });
 
   it('соседи — как в макете ноутбука: ×0,7 и ±182 px по вертикали', () => {
@@ -100,6 +134,13 @@ describe('cardPose', () => {
     expect(p.y).toBeCloseTo(91, 6);
   });
 
+  it('активная карточка резкая, остальные размываются тем сильнее, чем дальше', () => {
+    expect(cardPose(0, CARDS_DESKTOP).blur).toBe(0);
+    const b = [0.5, 1, 2, 3].map((d) => cardPose(d, CARDS_DESKTOP).blur);
+    for (let i = 1; i < b.length; i++) expect(b[i]).toBeGreaterThan(b[i - 1]!);
+    expect(cardPose(-1, CARDS_MOBILE).blur).toBeGreaterThan(0);
+  });
+
   it('далёкие карточки исчезают', () => {
     expect(cardPose(4, CARDS_DESKTOP).opacity).toBe(0);
     expect(cardPose(-10, CARDS_DESKTOP).opacity).toBe(0);
@@ -108,19 +149,6 @@ describe('cardPose', () => {
   it('на мобильном вверх и вниз — разные отступы (под карточкой текст)', () => {
     expect(cardPose(-1, CARDS_MOBILE).y).toBeCloseTo(-220, 6);
     expect(cardPose(1, CARDS_MOBILE).y).toBeCloseTo(338, 6);
-  });
-});
-
-describe('zoomCamera', () => {
-  it('при масштабе 1 — исходная камера', () => {
-    expect(zoomCamera({ x: 1, y: 2, z: 10 }, { x: 0, y: 0.5, z: 0 }, 1)).toEqual({ x: 1, y: 2, z: 10 });
-  });
-
-  it('при масштабе s камера в s раз ближе к точке, точка остаётся на месте экрана', () => {
-    const c = zoomCamera({ x: 1, y: 2, z: 10 }, { x: 0, y: 0.5, z: 0 }, 4);
-    expect(c.z).toBeCloseTo(2.5, 6);
-    expect(c.x).toBeCloseTo(0.25, 6);
-    expect(c.y).toBeCloseTo(0.5 + 1.5 / 4, 6);
   });
 });
 

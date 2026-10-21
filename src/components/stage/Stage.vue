@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Скролл-сцена «первый экран → избранные проекты», 3D-маскот и прелоадер.
-// Гидрируется через client:idle: включает sticky-сцену, по скроллу двигает слои (пролёт с блюром)
+// Гидрируется через client:idle: включает sticky-сцену, по скроллу ведёт переход «туман» между экранами
 // и карусель кейсов. three.js и модели грузятся сразу, прелоадер показывает прогресс
 // и уходит, когда 3D готов. Без аппаратного WebGL, при ошибке или дольше LOAD_TIMEOUT_MS
 // страница открывается с постерами, а 3D (если грузится) подменит их позже.
@@ -83,20 +83,8 @@ onMounted(() => {
   let shownInfo = 0;
   let invalidate3d = () => {};
 
-  // точки, вокруг которых растут слои при пролёте, — глаза маскота на постерах
-  const origin = (poster: HTMLElement | null) => {
-    if (!poster) return '50% 50%';
-    const r = offsetRect(poster, pin);
-    const b = posterBounds(poster);
-    return `${r.left + r.width * b.centerX}px ${r.top + r.height * b.eye}px`;
-  };
-  const measureOrigins = () => {
-    heroLayer.style.transformOrigin = origin(visiblePoster(heroLayer, 'hero'));
-    projectsLayer.style.transformOrigin = origin(visiblePoster(projectsLayer, 'projects'));
-  };
-
-  const setLayer = (el: HTMLElement, scale: number, opacity: number, blur: number) => {
-    el.style.transform = scale === 1 ? '' : `scale(${scale})`;
+  // слой экрана: только прозрачность и блюр («туман»), без масштаба
+  const setLayer = (el: HTMLElement, opacity: number, blur: number) => {
     el.style.opacity = String(opacity);
     el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : '';
     el.toggleAttribute('data-hidden', opacity < 0.05);
@@ -109,9 +97,9 @@ onMounted(() => {
     const { t, active } = stageProgress(-stage.getBoundingClientRect().top, vh, count);
     transition = transitionState(t, reducedMotion);
 
-    setLayer(heroLayer, transition.heroScale, transition.heroOpacity, transition.phase === 'hero' ? transition.blur : 0);
-    setLayer(projectsLayer, transition.projectsScale, transition.projectsOpacity, transition.phase === 'projects' ? transition.blur : 0);
-    layer.style.filter = transition.blur > 0.05 ? `blur(${transition.blur.toFixed(2)}px)` : '';
+    // 3D-маскот не размывается: он — сквозная нить между экранами
+    setLayer(heroLayer, transition.heroOpacity, transition.heroBlur);
+    setLayer(projectsLayer, transition.projectsOpacity, transition.projectsBlur);
 
     const table = mobile.matches ? CARDS_MOBILE : CARDS_DESKTOP;
     cards.forEach((card, i) => {
@@ -120,6 +108,7 @@ onMounted(() => {
       card.style.setProperty('--cy', String(p.y));
       card.style.setProperty('--cs', String(p.scale));
       card.style.setProperty('--co', String(p.opacity));
+      card.style.setProperty('--cb', p.blur.toFixed(2));
       card.style.pointerEvents = p.opacity < 0.05 ? 'none' : '';
     });
 
@@ -151,7 +140,6 @@ onMounted(() => {
   };
 
   const ro = new ResizeObserver(() => {
-    measureOrigins();
     schedule();
   });
   ro.observe(pin);
@@ -165,7 +153,6 @@ onMounted(() => {
     stage.removeEventListener('focusin', onFocus);
     cancelAnimationFrame(frame);
   });
-  measureOrigins();
   update();
 
   // --- 3D

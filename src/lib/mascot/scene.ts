@@ -25,8 +25,8 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { TransitionState } from '../stage/math';
 import { bytesFraction } from '../preloader/progress';
-import { zoomCamera } from '../stage/math';
-import { type PosterBounds, type Rect, clampPixelRatio, damp, envelope, eyeHeight, fitCamera, orbitPosition, posterTarget } from './math';
+import { lerpFit } from '../stage/math';
+import { type PosterBounds, type Rect, clampPixelRatio, damp, envelope, fitCamera, orbitPosition, posterTarget } from './math';
 import { getRenderer } from './renderer';
 
 // Риг и анимации — по прототипу (см. docs/mascot.md); подписей у логотипов нет, орбита медленнее.
@@ -35,8 +35,6 @@ const FOV = 28;
 const ORBIT_SPEED = 0.2; // в прототипе 0.32
 const ARMS_DOWN = 1.2; // модель в T-позе — руки опускаем костями
 const IDLE_AFTER_MS = 6000;
-/** во сколько раз сильнее DOM-слоя приближается 3D при пролёте — чтобы камера прошла сквозь голову */
-const FLY_BOOST = 2.5;
 /** поза «показывает на проекты»: левая рука (справа на экране) почти горизонтально */
 const POINT = { upper: 0.45, fore: 0.05, hand: 0.15, yaw: 0.35, body: 0.25 };
 
@@ -87,7 +85,7 @@ export interface MascotSceneOptions {
   container: HTMLElement;
   /** рамки PNG-постеров относительно container (без учёта transform): 3D встаёт ровно на их место */
   measure: () => { hero: PosterInfo; projects: PosterInfo | null };
-  /** состояние пролёта «первый экран → проекты» */
+  /** состояние перехода «первый экран → проекты» */
   getTransition: () => TransitionState;
   /** следить за курсором (только мышь и без prefers-reduced-motion) */
   trackCursor: boolean;
@@ -276,7 +274,6 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
   type Fit = ReturnType<typeof fitCamera>;
   let fitHero: Fit = { distance: 3, x: 0, y: H / 2 };
   let fitProjects: Fit | null = null;
-  const eye = { x: 0, y: eyeHeight(H), z: 0 };
   let radius = H * 0.6;
   function layout() {
     const w = container.clientWidth;
@@ -293,16 +290,13 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
     placeCamera();
   }
 
-  // пролёт: камера летит к глазам и проходит сквозь голову, затем «подлетает» к маскоту на экране проектов
+  // переход: маскот плавно переезжает с места постера первого экрана на место постера экрана проектов
   let transition = getTransition();
   function placeCamera() {
     transition = getTransition();
-    const onProjects = transition.phase === 'projects' && fitProjects;
-    const fit = onProjects ? fitProjects! : fitHero;
-    const s = onProjects ? transition.projectsScale : 1 + (transition.heroScale - 1) * FLY_BOOST;
-    const c = zoomCamera({ x: fit.x, y: fit.y, z: fit.distance }, eye, s);
-    camera.position.set(c.x, c.y, c.z);
-    orbit.visible = transition.phase === 'hero';
+    const fit = lerpFit(fitHero, fitProjects ?? fitHero, transition.mascotMix);
+    camera.position.set(fit.x, fit.y, fit.distance);
+    orbit.visible = transition.logos > 0.01;
   }
 
   // --- ввод
@@ -460,10 +454,16 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
       logo.hover = damp(logo.hover, logo === hovered ? 1 : 0, 10, dt);
       logo.kick = Math.max(0, logo.kick - dt * 1.6);
       const bob = reducedMotion ? 0 : Math.sin(t * 1.1 + logo.phase) * H * 0.025;
-      logo.holder.position.set(p.x, p.y + bob + logo.hover * H * 0.03 + logo.kick * H * 0.08, p.z + logo.hover * H * 0.15);
+      // при переходе логотипы втягиваются в кудри (к центру орбиты) и уменьшаются
+      const pull = transition.logos;
+      logo.holder.position.set(
+        p.x * pull,
+        H * 0.8 + (p.y - H * 0.8 + bob + logo.hover * H * 0.03 + logo.kick * H * 0.08) * pull,
+        (p.z + logo.hover * H * 0.15) * pull,
+      );
       logo.holder.rotation.y = (reducedMotion ? 0 : Math.sin(t * 0.6 + logo.phase) * 0.45) + yaw * 0.6 + logo.kick * Math.PI * 2;
       logo.holder.rotation.x = -mouse.y * 0.25;
-      logo.holder.scale.setScalar(logo.scale * (1 + logo.hover * 0.25));
+      logo.holder.scale.setScalar(logo.scale * (1 + logo.hover * 0.25) * pull);
     });
     orbit.rotation.y = yaw * 0.25;
     orbit.rotation.z = -mouse.x * 0.06;

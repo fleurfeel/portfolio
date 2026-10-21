@@ -12,7 +12,7 @@ import { CARDS_DESKTOP, CARDS_MOBILE, cardPose, formatCounter } from '../../lib/
 const cardVars = (i: number) => {
   const d = cardPose(i, CARDS_DESKTOP);
   const m = cardPose(i, CARDS_MOBILE);
-  return `--cx-d:${d.x};--cy-d:${d.y};--cs-d:${d.scale};--co-d:${d.opacity};--cx-m:${m.x};--cy-m:${m.y};--cs-m:${m.scale};--co-m:${m.opacity}`;
+  return `--cx-d:${d.x};--cy-d:${d.y};--cs-d:${d.scale};--co-d:${d.opacity};--cb-d:${d.blur};--cx-m:${m.x};--cy-m:${m.y};--cs-m:${m.scale};--co-m:${m.opacity};--cb-m:${m.blur}`;
 };
 ---
 
@@ -145,7 +145,9 @@ const cardVars = (i: number) => {
     height: var(--card-h);
     transform: translate(calc(var(--cx) * var(--u)), calc(var(--cy) * var(--u))) scale(var(--cs));
     opacity: var(--co);
-    will-change: transform, opacity;
+    /* глубина резкости: дальние от активной карточки размыты */
+    filter: blur(calc(var(--cb) * 1px));
+    will-change: transform, opacity, filter;
   }
 
   .projects__card a {
@@ -262,6 +264,7 @@ const cardVars = (i: number) => {
       --cy: var(--cy-m);
       --cs: var(--cs-m);
       --co: var(--co-m);
+      --cb: var(--cb-m);
     }
 
     .projects__title {
@@ -334,6 +337,7 @@ const cardVars = (i: number) => {
       --cy: var(--cy-d);
       --cs: var(--cs-d);
       --co: var(--co-d);
+      --cb: var(--cb-d);
     }
 
     .projects__title {

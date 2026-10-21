@@ -2,7 +2,7 @@ import { AVATAR_POSTER_BOUNDS, MASCOT_POSTER_BOUNDS, type PosterBounds, type Rec
 
 /**
  * Рамка элемента относительно root по offset* — без учёта transform предков.
- * Слои сцены масштабируются при пролёте, а 3D должен знать их «покоящуюся» раскладку.
+ * Не зависит от transform предков: 3D должен знать «покоящуюся» раскладку постеров.
  */
 export function offsetRect(el: HTMLElement, root: HTMLElement): Rect {
   let left = 0;

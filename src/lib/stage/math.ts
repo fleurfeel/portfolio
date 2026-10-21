@@ -2,16 +2,14 @@
 
 /** Длины участков скролла в экранах (100svh). */
 export const STAGE = {
-  /** пролёт сквозь маскота */
+  /** переход «туман»: первый экран растворяется, маскот переезжает, проекты проявляются */
   transition: 1.2,
   /** прокрутка на один кейс */
   step: 0.6,
   /** пауза на последнем кейсе перед выходом из сцены */
   hold: 0.4,
-  /** блюр в самой глубокой точке пролёта, px */
-  maxBlur: 18,
-  /** во сколько раз «приближается» первый экран перед сменой */
-  maxZoom: 8,
+  /** блюр экранов в середине перехода, px */
+  maxBlur: 14,
 } as const;
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v));
@@ -20,7 +18,7 @@ const smoothstep = (a: number, b: number, v: number) => {
   return x * x * (3 - 2 * x);
 };
 
-/** Где мы в сцене: t — пролёт 0…1, active — дробный индекс активного кейса. */
+/** Где мы в сцене: t — переход 0…1, active — дробный индекс активного кейса. */
 export function stageProgress(scrolled: number, viewport: number, count: number) {
   const s = Math.max(0, scrolled / viewport);
   return {
@@ -36,60 +34,63 @@ export function stageHeight(viewport: number, count: number) {
 
 export interface TransitionState {
   phase: 'hero' | 'projects';
-  heroScale: number;
   heroOpacity: number;
-  projectsScale: number;
+  /** px */
+  heroBlur: number;
   projectsOpacity: number;
-  /** px, общий для DOM-слоёв и канваса */
-  blur: number;
+  /** px */
+  projectsBlur: number;
+  /** 0 — маскот на месте первого экрана, 1 — на экране проектов */
+  mascotMix: number;
+  /** 1 — логотипы на орбите, 0 — втянулись в кудри */
+  logos: number;
   /** 0…1 — насколько поднята рука в сторону проектов */
   pointing: number;
 }
 
 /**
- * Пролёт: первая половина — первый экран растёт вокруг глаз маскота и размывается
- * (камера летит сквозь голову), вторая — экран проектов «подлетает» из размытия.
+ * Переход «туман» без приближения: первый экран размывается и растворяется в цвет фона,
+ * маскот остаётся резким и переезжает на своё место на экране проектов,
+ * а экран проектов проявляется из размытия.
  */
 export function transitionState(t: number, reducedMotion: boolean): TransitionState {
   const phase = t < 0.5 ? 'hero' : 'projects';
-  const v = clamp((t - 0.5) / 0.5);
-  const pointing = phase === 'projects' ? smoothstep(0.3, 1, v) : 0;
+  const pointing = smoothstep(0.6, 1, t);
 
   if (reducedMotion) {
     return {
       phase,
-      heroScale: 1,
-      heroOpacity: phase === 'hero' ? 1 - smoothstep(0.35, 0.5, t) : 0,
-      projectsScale: 1,
-      projectsOpacity: phase === 'projects' ? smoothstep(0.5, 0.65, t) : 0,
-      blur: 0,
+      heroOpacity: 1 - smoothstep(0.35, 0.5, t),
+      heroBlur: 0,
+      projectsOpacity: smoothstep(0.5, 0.65, t),
+      projectsBlur: 0,
+      mascotMix: phase === 'hero' ? 0 : 1,
+      logos: phase === 'hero' ? 1 : 0,
       pointing,
     };
   }
 
-  if (phase === 'hero') {
-    const u = t / 0.5;
-    return {
-      phase,
-      heroScale: 1 + (STAGE.maxZoom - 1) * u * u * u,
-      heroOpacity: 1 - smoothstep(0.6, 1, u),
-      projectsScale: 0.85,
-      projectsOpacity: 0,
-      blur: STAGE.maxBlur * u,
-      pointing,
-    };
-  }
-
-  const easeOut = 1 - (1 - v) * (1 - v);
   return {
     phase,
-    heroScale: STAGE.maxZoom,
-    heroOpacity: 0,
-    projectsScale: 0.85 + 0.15 * easeOut,
-    projectsOpacity: smoothstep(0, 0.5, v),
-    blur: STAGE.maxBlur * (1 - v),
+    heroOpacity: 1 - smoothstep(0.05, 0.5, t),
+    heroBlur: STAGE.maxBlur * smoothstep(0, 0.5, t),
+    projectsOpacity: smoothstep(0.45, 0.9, t),
+    projectsBlur: STAGE.maxBlur * (1 - smoothstep(0.45, 1, t)),
+    mascotMix: smoothstep(0.1, 0.9, t),
+    logos: 1 - smoothstep(0, 0.4, t),
     pointing,
   };
+}
+
+export interface CameraFit {
+  distance: number;
+  x: number;
+  y: number;
+}
+
+/** Кадр камеры между первым экраном (m=0) и экраном проектов (m=1). */
+export function lerpFit(a: CameraFit, b: CameraFit, m: number): CameraFit {
+  return { distance: a.distance + (b.distance - a.distance) * m, x: a.x + (b.x - a.x) * m, y: a.y + (b.y - a.y) * m };
 }
 
 /**
@@ -102,6 +103,8 @@ export interface CardTable {
   yUp: readonly number[];
   yDown: readonly number[];
   opacity: readonly number[];
+  /** глубина резкости: блюр по удалённости от активной, px */
+  blur: readonly number[];
 }
 
 /** Ноутбук 1440 (на десктопе 1920 всё ×1,5): каждая следующая ×0,7, дуга уходит вправо. */
@@ -111,6 +114,7 @@ export const CARDS_DESKTOP: CardTable = {
   yUp: [0, 182, 313, 408.5, 490],
   yDown: [0, 182, 313, 408.5, 490],
   opacity: [1, 1, 1, 1, 0],
+  blur: [0, 3, 5, 7, 8],
 };
 
 /** Телефон 393: соседи выглядывают справа, вниз отступ больше — под карточкой текст; вторая сверху уходит за край. */
@@ -120,6 +124,7 @@ export const CARDS_MOBILE: CardTable = {
   yUp: [0, 220, 480, 600],
   yDown: [0, 338, 464, 600],
   opacity: [1, 1, 1, 0],
+  blur: [0, 2.5, 4, 5],
 };
 
 const sample = (values: readonly number[], at: number) => {
@@ -138,24 +143,7 @@ export function cardPose(offset: number, table: CardTable) {
     y: offset < 0 ? -y : y,
     scale: sample(table.scale, a),
     opacity: sample(table.opacity, a),
-  };
-}
-
-export interface Vec3 {
-  x: number;
-  y: number;
-  z: number;
-}
-
-/**
- * Камера, при которой сцена выглядит увеличенной в s раз вокруг точки focus:
- * для объектов в плоскости точки это то же, что CSS scale с transform-origin в ней.
- */
-export function zoomCamera(camera: Vec3, focus: Vec3, s: number): Vec3 {
-  return {
-    x: focus.x + (camera.x - focus.x) / s,
-    y: focus.y + (camera.y - focus.y) / s,
-    z: focus.z + (camera.z - focus.z) / s,
+    blur: sample(table.blur, a),
   };
 }
 
