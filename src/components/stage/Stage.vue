@@ -1,28 +1,65 @@
 <script setup lang="ts">
-// Скролл-сцена «первый экран → избранные проекты» и 3D-маскот.
+// Скролл-сцена «первый экран → избранные проекты», 3D-маскот и прелоадер.
 // Гидрируется через client:idle: включает sticky-сцену, по скроллу двигает слои (пролёт с блюром)
-// и карточки на дуге. three.js и модели грузятся при первом действии пользователя
-// и только при аппаратном WebGL; до этого маскота показывают постеры.
+// и карусель кейсов. three.js и модели грузятся сразу, прелоадер показывает прогресс
+// и уходит, когда 3D готов. Без аппаратного WebGL, при ошибке или дольше LOAD_TIMEOUT_MS
+// страница открывается с постерами, а 3D (если грузится) подменит их позже.
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { shouldTrackCursor } from '../../lib/mascot/math';
 import { hasHardwareWebGL } from '../../lib/mascot/webgl-support';
 import { offsetRect, posterBounds, visiblePoster } from '../../lib/stage/dom';
+import { approach, overallProgress, percentLabel } from '../../lib/preloader/progress';
 import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, cardPose, stageProgress, transitionState } from '../../lib/stage/math';
+
+const props = defineProps<{ modelSizes: Record<string, number> }>();
 
 const root = ref<HTMLDivElement>();
 const cleanups: (() => void)[] = [];
 let cancelled = false;
 
-const ACTIVITY = ['pointermove', 'pointerdown', 'touchstart', 'wheel', 'scroll', 'keydown'] as const;
+const LOAD_TIMEOUT_MS = 15_000;
 
-function whenUserActive() {
-  return new Promise<void>((resolve) => {
-    const go = () => {
-      for (const e of ACTIVITY) removeEventListener(e, go);
-      resolve();
-    };
-    for (const e of ACTIVITY) addEventListener(e, go, { passive: true });
-  });
+/** Полоска прелоадера: плавно догоняет реальный прогресс, по finish() доходит до 100% и растворяется. */
+function createPreloader(el: HTMLElement | null, reducedMotion: boolean) {
+  const fill = el?.querySelector<HTMLElement>('[data-preloader-fill]');
+  const label = el?.querySelector<HTMLElement>('[data-preloader-percent]');
+  let target = 0;
+  let shown = 0;
+  let finished = false;
+  let raf = 0;
+  let last = 0;
+  const paint = () => {
+    fill?.style.setProperty('--p', String(shown));
+    if (label) label.textContent = percentLabel(shown);
+    el?.setAttribute('aria-valuenow', String(Math.floor(shown * 100)));
+  };
+  const hide = () => {
+    if (!el) return;
+    el.dataset.done = '';
+    el.setAttribute('aria-hidden', 'true');
+    cancelAnimationFrame(raf);
+  };
+  const tick = (now: number) => {
+    const dt = last ? Math.min((now - last) / 1000, 0.1) : 0;
+    last = now;
+    // при reduced motion — без плавности; после finish() — быстрее
+    shown = reducedMotion ? target : approach(shown, target, dt, finished ? 12 : 4);
+    if (finished && target - shown < 0.005) shown = 1;
+    paint();
+    if (finished && shown >= 1) return void setTimeout(hide, reducedMotion ? 0 : 250);
+    raf = requestAnimationFrame(tick);
+  };
+  if (el) raf = requestAnimationFrame(tick);
+  return {
+    set(p: number) {
+      if (!finished) target = Math.max(target, Math.min(p, 0.99));
+    },
+    finish() {
+      if (finished || !el) return;
+      finished = true;
+      target = 1;
+    },
+  };
 }
 
 onMounted(() => {
@@ -38,6 +75,7 @@ onMounted(() => {
   const count = cards.length;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const mobile = matchMedia('(max-width: 1023.98px)');
+  const preloader = createPreloader(document.querySelector<HTMLElement>('[data-preloader]'), reducedMotion);
 
   stage.dataset.fx = '';
 
@@ -132,13 +170,17 @@ onMounted(() => {
 
   // --- 3D
   void (async () => {
-    if (!hasHardwareWebGL()) return;
-    await whenUserActive();
-    if (cancelled) return;
+    if (!hasHardwareWebGL()) return preloader.finish();
+    const timeout = setTimeout(preloader.finish, LOAD_TIMEOUT_MS);
+    cleanups.push(() => clearTimeout(timeout));
     const canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const progress = { code: 0, models: 0, init: 0 };
+    const report = () => preloader.set(overallProgress(progress));
     try {
       const { createMascotScene } = await import('../../lib/mascot/scene');
       if (cancelled) return;
+      progress.code = 1;
+      report();
       const measure = () => {
         const hero = visiblePoster(heroLayer, 'hero')!;
         const projects = visiblePoster(projectsLayer, 'projects');
@@ -150,6 +192,12 @@ onMounted(() => {
       const scene = await createMascotScene({
         // на touch-устройствах — текстуры 1024 вместо 2048
         modelUrl: canHover ? '/models/artem.glb' : '/models/artem-mobile.glb',
+        modelSizes: props.modelSizes,
+        onProgress: ({ models, init }) => {
+          progress.models = models;
+          progress.init = init;
+          report();
+        },
         container: layer,
         measure,
         getTransition: () => transition,
@@ -158,6 +206,8 @@ onMounted(() => {
         onReady: () => {
           layer.dataset.ready = '';
           stage.dataset.mascot = 'ready'; // постеры уходят
+          clearTimeout(timeout);
+          preloader.finish();
         },
       });
       if (cancelled) return scene.dispose();
@@ -166,6 +216,7 @@ onMounted(() => {
     } catch (error) {
       // остаются постеры
       console.warn('3D-маскот не запустился', error);
+      preloader.finish();
     }
   })();
 });

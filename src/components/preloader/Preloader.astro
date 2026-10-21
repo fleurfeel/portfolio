@@ -1,0 +1,97 @@
+---
+// Прелоадер главной: персонаж и полоска загрузки с процентами. Виден сразу, без JS;
+// прогресс и исчезновение ведёт остров Stage.vue (реальные байты моделей + подготовка 3D).
+// Без JS прелоадер скрыт (noscript), страница работает с постерами.
+// Макета нет — временный вид из токенов.
+import { Picture } from 'astro:assets';
+import mascot from '../../assets/hero/mascot.png';
+---
+
+<div class="preloader" data-preloader role="progressbar" aria-label="Загрузка сайта" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+  <div class="preloader__inner">
+    <Picture
+      src={mascot}
+      formats={['avif', 'webp']}
+      widths={[300, 450, 600, 900]}
+      sizes="(min-width: 1024px) 300px, 45vw"
+      alt=""
+      class="preloader__mascot"
+      loading="eager"
+      fetchpriority="high"
+    />
+    <div class="preloader__bar" aria-hidden="true"><span class="preloader__fill" data-preloader-fill></span></div>
+    <p class="preloader__percent" data-preloader-percent aria-hidden="true">0%</p>
+  </div>
+</div>
+
+<noscript><style>.preloader { display: none !important; }</style></noscript>
+
+<style>
+  .preloader {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition:
+      opacity 0.5s ease,
+      visibility 0.5s;
+  }
+
+  .preloader[data-done] {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /* пока идёт загрузка, страница под прелоадером не скроллится */
+  :global(html:has(.preloader:not([data-done]))) {
+    overflow: hidden;
+  }
+
+  .preloader__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .preloader__inner :global(img) {
+    display: block;
+    width: auto;
+    height: min(44svh, 400px);
+  }
+
+  .preloader__bar {
+    width: min(240px, 60vw);
+    height: 2px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--color-secondary) 25%, var(--color-bg));
+  }
+
+  .preloader__fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--color-accent);
+    transform: scaleX(var(--p, 0));
+    transform-origin: left;
+  }
+
+  .preloader__percent {
+    margin-top: -12px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .preloader {
+      transition: none;
+    }
+  }
+</style>

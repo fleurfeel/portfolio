@@ -24,6 +24,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { TransitionState } from '../stage/math';
+import { bytesFraction } from '../preloader/progress';
 import { zoomCamera } from '../stage/math';
 import { type PosterBounds, type Rect, clampPixelRatio, damp, envelope, eyeHeight, fitCamera, orbitPosition, posterTarget } from './math';
 import { getRenderer } from './renderer';
@@ -47,9 +48,41 @@ const yieldToMain = () =>
     else setTimeout(resolve, 0);
   });
 
+/** Скачать файл, сообщая число полученных байт (для полоски прелоадера). */
+async function fetchWithProgress(url: string, onBytes: (n: number) => void) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url}: ${res.status}`);
+  if (!res.body) {
+    const buf = await res.arrayBuffer();
+    onBytes(buf.byteLength);
+    return buf;
+  }
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onBytes(received);
+  }
+  const out = new Uint8Array(received);
+  let offset = 0;
+  for (const c of chunks) {
+    out.set(c, offset);
+    offset += c.length;
+  }
+  return out.buffer;
+}
+
 export interface MascotSceneOptions {
   /** /models/artem.glb (текстуры 2048) или /models/artem-mobile.glb (1024) */
   modelUrl: string;
+  /** размеры файлов моделей в байтах (считаются при сборке) — знаменатель для прогресса */
+  modelSizes: Record<string, number>;
+  /** прогресс загрузки: models — доля скачанных байт, init — подготовка GPU (0…1) */
+  onProgress?: (p: { models: number; init: number }) => void;
   /** слой, в который встаёт canvas; по его размеру считается кадр */
   container: HTMLElement;
   /** рамки PNG-постеров относительно container (без учёта transform): 3D встаёт ровно на их место */
@@ -118,7 +151,7 @@ interface Logo {
   kick: number;
 }
 
-export async function createMascotScene({ modelUrl, container, measure, getTransition, trackCursor, reducedMotion, onReady }: MascotSceneOptions) {
+export async function createMascotScene({ modelUrl, modelSizes, onProgress, container, measure, getTransition, trackCursor, reducedMotion, onReady }: MascotSceneOptions) {
   const renderer = getRenderer();
   const canvas = renderer.domElement;
   canvas.style.cssText = 'display:block;width:100%;height:100%;touch-action:pan-y';
@@ -126,8 +159,19 @@ export async function createMascotScene({ modelUrl, container, measure, getTrans
   // геометрия распаковывается в воркерах, а не в основном потоке
   MeshoptDecoder.useWorkers(2);
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-  const load = (url: string) => loader.loadAsync(url).then((gltf) => gltf.scene);
-  const loading = Promise.all([load(modelUrl), ...TOOLS.map((k) => load(`/models/tool-${k}.glb`))]);
+  const urls = [modelUrl, ...TOOLS.map((k) => `/models/tool-${k}.glb`)];
+  const totals = urls.map((u) => modelSizes[u] ?? 200_000);
+  const loaded = urls.map(() => 0);
+  let initDone = 0;
+  const report = () => onProgress?.({ models: bytesFraction(loaded, totals), init: initDone });
+  const load = (url: string, i: number) =>
+    fetchWithProgress(url, (n) => {
+      loaded[i] = n;
+      report();
+    })
+      .then((buf) => loader.parseAsync(buf, ''))
+      .then((gltf) => gltf.scene);
+  const loading = Promise.all(urls.map(load));
 
   const scene = new Scene();
   const pmrem = new PMREMGenerator(renderer);
@@ -477,18 +521,27 @@ export async function createMascotScene({ modelUrl, container, measure, getTrans
     if (!(o instanceof Mesh)) return;
     for (const m of [o.material].flat()) for (const v of Object.values(m)) if (v instanceof Texture) textures.add(v);
   });
+  const initSteps = textures.size + 2;
+  let step = 0;
+  const initStep = () => {
+    initDone = ++step / initSteps;
+    report();
+  };
   for (const t of textures) {
     renderer.initTexture(t);
+    initStep();
     await yieldToMain();
   }
   layout();
   update(0, 0);
   await renderer.compileAsync(scene, camera);
+  initStep();
   await yieldToMain();
 
   container.appendChild(canvas);
   layout();
   render();
+  initStep();
   sync();
 
   let pending = 0;
