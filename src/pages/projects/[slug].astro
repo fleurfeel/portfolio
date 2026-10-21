@@ -1,5 +1,6 @@
 ---
 // Страница кейса — заглушка до макета.
+import { Image } from 'astro:assets';
 import ArrowRightLong from '../../assets/icons/arrow-right-long.svg';
 import { projectUrl, projects } from '../../data/projects';
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -23,7 +24,9 @@ const next = projects[(index + 1) % projects.length]!;
     <p class="case__counter">{formatCounter(index, projects.length)}</p>
     <h1 class="case__title">{project.title}</h1>
     <p class="case__summary">{project.summary}</p>
-    <div class="case__image" role="img" aria-label="Здесь будет обложка кейса"></div>
+    <div class="case__image">
+      <Image src={project.cover} widths={[600, 1000, 1400, 1920]} sizes="(min-width: 1240px) 1200px, 100vw" alt={`Первый экран ${project.title}`} loading="eager" />
+    </div>
 
     <a class="case__next" href={projectUrl(next)}>
       Следующий проект
@@ -76,10 +79,16 @@ const next = projects[(index + 1) % projects.length]!;
   }
 
   .case__image {
-    aspect-ratio: 312 / 200;
     margin-top: 24px;
+    overflow: hidden;
     border-radius: clamp(18px, 2.5vw, 36px);
     background: color-mix(in srgb, var(--color-secondary) 18%, var(--color-bg));
+  }
+
+  .case__image :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 
   .case__next {

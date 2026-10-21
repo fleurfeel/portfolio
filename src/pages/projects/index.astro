@@ -1,5 +1,6 @@
 ---
 // Все проекты — заглушка до макета.
+import { Image } from 'astro:assets';
 import { projectUrl, projects } from '../../data/projects';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { formatCounter } from '../../lib/stage/math';
@@ -17,7 +18,9 @@ import { formatCounter } from '../../lib/stage/math';
         projects.map((project, i) => (
           <li>
             <a class="all__card" href={projectUrl(project)}>
-              <span class="all__image" />
+              <span class="all__image">
+                <Image src={project.cover} widths={[400, 700, 1000]} sizes="(min-width: 1200px) 380px, (min-width: 720px) 45vw, 100vw" alt="" loading="lazy" decoding="async" />
+              </span>
               <span class="all__counter">{formatCounter(i, projects.length)}</span>
               <span class="all__name">{project.title}</span>
             </a>
@@ -69,9 +72,19 @@ import { formatCounter } from '../../lib/stage/math';
   .all__image {
     aspect-ratio: 312 / 200;
     margin-bottom: 8px;
+    overflow: hidden;
     border-radius: 24px;
     background: color-mix(in srgb, var(--color-secondary) 18%, var(--color-bg));
     transition: opacity 0.2s ease;
+  }
+
+  /* обложка кейса: заполняет рамку, обрезаясь по краям */
+  .all__image :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: left top; /* на скриншотах заголовок слева */
   }
 
   .all__card:hover .all__image {

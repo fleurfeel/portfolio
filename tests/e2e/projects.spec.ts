@@ -1,14 +1,19 @@
 import { expect, test } from '@playwright/test';
 
+const SLUGS = ['catamarango', 'yufu-pro', 'lernium', 'beslimshop', 'abeona', 'territoriya-resheniy'];
+
 const STEP = 0.6; // src/lib/stage/math.ts → STAGE.step
 const TRANSITION = 1.2; // STAGE.transition
 
 test.describe('избранные проекты', () => {
-  test('7 карточек ведут на страницы кейсов', async ({ page }) => {
+  test('карточки кейсов с обложками ведут на страницы кейсов', async ({ page }) => {
     await page.goto('/');
     const cards = page.locator('[data-card] a');
-    await expect(cards).toHaveCount(7);
-    for (let i = 0; i < 7; i++) await expect(cards.nth(i)).toHaveAttribute('href', `/projects/project-${i + 1}`);
+    await expect(cards).toHaveCount(SLUGS.length);
+    for (const [i, slug] of SLUGS.entries()) {
+      await expect(cards.nth(i)).toHaveAttribute('href', `/projects/${slug}`);
+      await expect(cards.nth(i).locator('img')).toHaveCount(1);
+    }
   });
 
   test('скролл листает кейсы и меняет счётчик', async ({ page }) => {
@@ -34,7 +39,7 @@ test.describe('избранные проекты', () => {
       scrollTo(0, t * innerHeight);
     }, TRANSITION);
     await page.locator('[data-info][data-active] .projects__cta').click();
-    await expect(page).toHaveURL(/\/projects\/project-1$/);
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Название проекта/i);
+    await expect(page).toHaveURL(/\/projects\/catamarango$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('CatamaranGo');
   });
 });

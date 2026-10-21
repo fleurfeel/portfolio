@@ -2,7 +2,7 @@
 // «Избранные проекты». Макеты Figma: Mobile 393 (448:458), Laptop 1440 (447:380), Desktop 1920 (447:400).
 // Карточки стоят на дуге вокруг активной; позиции для активной = 0 считаются при сборке,
 // дальше их двигает остров Stage.vue по скроллу. Маскот здесь — постер, 3D встаёт на его место.
-import { Picture } from 'astro:assets';
+import { Image, Picture } from 'astro:assets';
 import ArrowRightLong from '../../assets/icons/arrow-right-long.svg';
 import avatar from '../../assets/hero/avatar.png';
 import mascot from '../../assets/hero/mascot.png';
@@ -48,8 +48,17 @@ const cardVars = (i: number) => {
     {
       projects.map((project, i) => (
         <li class="projects__card" data-card={i} style={cardVars(i)}>
-          <a href={projectUrl(project)} aria-label={`${project.title}, кейс ${i + 1}`}>
-            <span class="projects__image" />
+          <a href={projectUrl(project)} aria-label={`Кейс ${project.title}`}>
+            <span class="projects__image">
+              <Image
+                src={project.cover}
+                widths={[400, 700, 1000, 1400]}
+                sizes="(min-width: 1920px) 468px, (min-width: 1024px) 22vw, 90vw"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            </span>
           </a>
         </li>
       ))
@@ -149,10 +158,20 @@ const cardVars = (i: number) => {
     display: block;
     width: 100%;
     height: 100%;
+    overflow: hidden;
     border-radius: var(--card-r);
-    /* заглушка вместо картинки кейса */
+    /* фон, пока грузится обложка */
     background: color-mix(in srgb, var(--color-secondary) 18%, var(--color-bg));
     transition: opacity 0.2s ease;
+  }
+
+  /* обложка кейса: заполняет рамку, обрезаясь по краям */
+  .projects__image :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: left top; /* на скриншотах заголовок слева */
   }
 
   .projects__card a:hover .projects__image {
