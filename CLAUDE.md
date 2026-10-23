@@ -20,7 +20,7 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 - `public/_headers` — заголовки кэша для Cloudflare Pages; `.node-version` — версия Node для сборки
 - `docs/mascot.md` — разбор прототипа маскота: риг, анимации, параметры
 - `src/components/stage/` — скролл-сцена: первый экран, «Избранные проекты» и «Обо мне» слоями в одном sticky-экране, переходы «туман» и карусель (`Stage.vue`, математика в `src/lib/stage/math.ts`)
-- `src/data/about.ts` — тексты «Обо мне» (образование, опыт); резюме — `public/resume.pdf` (пока нет)
+- `src/data/about.ts` — тексты «Обо мне» (образование, опыт); резюме — `public/resume.pdf`
 - `src/data/projects.ts` — кейсы, страницы `/projects` и `/projects/[slug]`
 - `tests/unit/` — Vitest, `tests/e2e/` — Playwright, `lighthouserc.cjs` — бюджет Lighthouse
 

@@ -5,7 +5,7 @@
 import { Picture } from 'astro:assets';
 import avatar from '../../assets/hero/avatar.png';
 import mascot from '../../assets/hero/mascot.png';
-import { education, experienceTitle, intro, jobs, resumeUrl } from '../../data/about';
+import { education, experienceTitle, intro, jobs, resumeFileName, resumeUrl } from '../../data/about';
 ---
 
 <section class="about" aria-labelledby="about-title">
@@ -67,7 +67,7 @@ import { education, experienceTitle, intro, jobs, resumeUrl } from '../../data/a
         ))
       }
     </ol>
-    <a class="about__cta" href={resumeUrl} download>Скачать резюме</a>
+    <a class="about__cta" href={resumeUrl} download={resumeFileName}>Скачать резюме</a>
   </div>
 </section>
 

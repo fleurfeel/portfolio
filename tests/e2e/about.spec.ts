@@ -10,6 +10,12 @@ test.describe('обо мне', () => {
     await expect(about.locator('.about__cta')).toHaveAttribute('href', '/resume.pdf');
   });
 
+  test('резюме отдаётся как PDF', async ({ request }) => {
+    const res = await request.get('/resume.pdf');
+    expect(res.status()).toBe(200);
+    expect(res.headers()['content-type']).toContain('application/pdf');
+  });
+
   test('пункт меню «Обо мне» ведёт к секции и она видна', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'на мобильном пункт в бургер-меню');
     await page.goto('/', { waitUntil: 'networkidle' });

@@ -41,5 +41,6 @@ export const jobs: Job[] = [
   { company: 'NeuroFlex', role: 'Продуктовый дизайнер', period: 'Февраль 2026 - сейчас (9 месяцев)' },
 ];
 
-/** Пока файла нет — кнопка ведёт сюда; положить PDF в public/resume.pdf. */
+/** Резюме: public/resume.pdf; при скачивании сохраняется под понятным именем. */
 export const resumeUrl = '/resume.pdf';
+export const resumeFileName = 'Пашковский Руслан — резюме.pdf';
