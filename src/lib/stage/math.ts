@@ -212,6 +212,15 @@ export function cardPose(offset: number, table: CardTable) {
   };
 }
 
+/**
+ * Текст кейса на телефоне лежит там, где едут карточки: пока карусель между кейсами,
+ * текст растворяется и размывается, у остановки на кейсе — снова резкий.
+ */
+export function infoVisibility(active: number) {
+  const k = smoothstep(0.1, 0.35, Math.abs(active - Math.round(active)));
+  return { opacity: 1 - k, blur: 6 * k };
+}
+
 export function formatCounter(index: number, count: number) {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(index + 1)}/${pad(count)}`;

@@ -35,8 +35,10 @@ const FOV = 28;
 const ORBIT_SPEED = 0.2; // в прототипе 0.32
 const ARMS_DOWN = 1.2; // модель в T-позе — руки опускаем костями
 const IDLE_AFTER_MS = 6000;
-/** поза «показывает на проекты»: левая рука (справа на экране) почти горизонтально */
-const POINT = { upper: 0.45, fore: 0.05, hand: 0.15, yaw: 0.35, body: 0.25 };
+/** поза «показывает на проекты»: левая рука (справа на экране) почти горизонтально — карточки сбоку */
+const POINT = { upper: 0.45, fore: 0.05, hand: 0.15, yaw: 0.35, body: 0.25, look: 0 };
+/** на телефоне карточки ниже маскота: рука вниз-вправо, голова чуть наклонена к ним */
+const POINT_MOBILE = { upper: -0.55, fore: 0.05, hand: 0.1, yaw: 0.25, body: 0.15, look: 0.18 };
 
 /** Отдать поток браузеру между тяжёлыми шагами, чтобы не было одной длинной задачи. */
 const yieldToMain = () =>
@@ -276,6 +278,7 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
   let fitProjects: Fit | null = null;
   let fitAbout: Fit | null = null;
   let radius = H * 0.6;
+  let pose = POINT;
   function layout() {
     const w = container.clientWidth;
     const h = container.clientHeight;
@@ -289,6 +292,7 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
     fitProjects = projects ? fitCamera({ width: w, height: h, ...posterTarget(projects.rect, projects.bounds) }, H, FOV) : null;
     fitAbout = about ? fitCamera({ width: w, height: h, ...posterTarget(about.rect, about.bounds) }, H, FOV) : null;
     radius = H * (w < 1024 ? 0.5 : 0.6);
+    pose = w < 1024 ? POINT_MOBILE : POINT;
     placeCamera();
   }
 
@@ -377,7 +381,7 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
 
     placeCamera();
     const point = transition.pointing;
-    rig.rotation.y = yaw * 0.35 + POINT.body * point;
+    rig.rotation.y = yaw * 0.35 + pose.body * point;
     if (bones.head) {
       let nod = 0;
       if (nodT >= 0) {
@@ -386,7 +390,7 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
         if (u >= 1) nodT = -1;
         else nod = Math.sin(u * Math.PI * 2) * 0.18 * (1 - u);
       }
-      bones.head.rotation.set(pitch * 1.4 + nod, yaw * 0.95 + POINT.yaw * point, -yaw * 0.1);
+      bones.head.rotation.set(pitch * 1.4 + nod + pose.look * point, yaw * 0.95 + pose.yaw * point, -yaw * 0.1);
     }
     if (bones.spine) bones.spine.rotation.y = yaw * 0.15;
 
@@ -408,9 +412,9 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
       }
     }
     // на экране проектов рука плавно поднимается в сторону карточек
-    uL += (POINT.upper - uL) * point;
-    fL += (POINT.fore - fL) * point;
-    hL += (POINT.hand - hL) * point;
+    uL += (pose.upper - uL) * point;
+    fL += (pose.fore - fL) * point;
+    hL += (pose.hand - hL) * point;
     if (bones.uL) bones.uL.rotation.z = uL;
     if (bones.fL) bones.fL.rotation.z = fL;
     if (bones.hL) bones.hL.rotation.z = hL;

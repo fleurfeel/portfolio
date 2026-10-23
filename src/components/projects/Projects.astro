@@ -65,7 +65,7 @@ const cardVars = (i: number) => {
     }
   </ol>
 
-  <div class="projects__info">
+  <div class="projects__info" data-info-box>
     <div class="projects__items">
       {
         projects.map((project, i) => (
@@ -284,8 +284,14 @@ const cardVars = (i: number) => {
       display: none;
     }
 
+    /* текст под слоем карточек: проезжающая карточка его закрывает, а не наоборот */
+    .projects__cards {
+      z-index: 1;
+    }
+
     .projects__info {
       position: absolute;
+      z-index: 0;
       top: calc(569 * var(--u));
       left: calc(var(--frame-left) + 20 * var(--u));
       width: calc(353 * var(--u));

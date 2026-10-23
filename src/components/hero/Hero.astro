@@ -210,12 +210,12 @@ const contact = { href: '#contact', label: 'Связаться со мной' };
 
   /* ---------- мобильная раскладка (< 1024) — макет 393 ---------- */
   @media (max-width: 1023.98px) {
-    /* свободное место делится как в макете: 111 px над сценой, 98 px под кнопкой */
+    /* над сценой — как в макете (111 px на 852), кнопка прижата к низу экрана */
     .hero {
       display: grid;
-      grid-template-rows: auto minmax(24px, 111fr) auto auto minmax(24px, 98fr);
+      grid-template-rows: auto minmax(24px, 111fr) auto minmax(max-content, 264fr);
       min-height: 100svh;
-      padding: 48px 20px 0;
+      padding: 48px 20px calc(20px + env(safe-area-inset-bottom));
     }
 
     .hero__header {
@@ -228,6 +228,14 @@ const contact = { href: '#contact', label: 'Связаться со мной' };
 
     .hero__bottom {
       grid-row: 4;
+      display: flex;
+    }
+
+    .hero__lead {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 24px;
     }
 
     .hero__header {
@@ -271,7 +279,7 @@ const contact = { href: '#contact', label: 'Связаться со мной' };
 
     .hero__cta {
       width: 100%;
-      margin-top: 24px;
+      margin-top: auto;
       padding: 20px 38px;
       font-size: 16px;
     }

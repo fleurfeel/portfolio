@@ -9,7 +9,7 @@ import { shouldTrackCursor } from '../../lib/mascot/math';
 import { hasHardwareWebGL } from '../../lib/mascot/webgl-support';
 import { offsetRect, posterBounds, visiblePoster } from '../../lib/stage/dom';
 import { approach, overallProgress, percentLabel } from '../../lib/preloader/progress';
-import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, sceneState, stageProgress } from '../../lib/stage/math';
+import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, infoVisibility, sceneState, stageProgress } from '../../lib/stage/math';
 
 const props = defineProps<{ modelSizes: Record<string, number> }>();
 
@@ -74,6 +74,7 @@ onMounted(() => {
 
   const cards = [...stage.querySelectorAll<HTMLElement>('[data-card]')];
   const infos = [...stage.querySelectorAll<HTMLElement>('[data-info]')];
+  const infoBox = stage.querySelector<HTMLElement>('[data-info-box]');
   const count = cards.length;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const mobile = matchMedia('(max-width: 1023.98px)');
@@ -114,6 +115,13 @@ onMounted(() => {
       card.style.setProperty('--cb', p.blur.toFixed(2));
       card.style.pointerEvents = p.opacity < 0.05 ? 'none' : '';
     });
+
+    // телефон: текст кейса под карточками — пока они едут, текст уходит в блюр
+    if (infoBox) {
+      const v = mobile.matches ? infoVisibility(active) : { opacity: 1, blur: 0 };
+      infoBox.style.opacity = v.opacity === 1 ? '' : String(v.opacity);
+      infoBox.style.filter = v.blur > 0.05 && !reducedMotion ? `blur(${v.blur.toFixed(2)}px)` : '';
+    }
 
     const current = Math.round(active);
     if (current !== shownInfo) {

@@ -11,6 +11,7 @@ import {
   lerpFit,
   aboutTransitionState,
   sceneState,
+  infoVisibility,
 } from './math';
 
 describe('stageProgress', () => {
@@ -153,6 +154,26 @@ describe('sceneState', () => {
     const p = sceneState(1, 0.5, false).pointing;
     expect(p).toBeGreaterThan(0);
     expect(p).toBeLessThan(1);
+  });
+});
+
+describe('infoVisibility', () => {
+  it('карусель стоит на кейсе — текст резкий и виден', () => {
+    for (const a of [0, 1, 3, 5]) expect(infoVisibility(a)).toEqual({ opacity: 1, blur: 0 });
+  });
+
+  it('карточки едут между кейсами — текст растворяется и размывается', () => {
+    const mid = infoVisibility(2.5);
+    expect(mid.opacity).toBe(0);
+    expect(mid.blur).toBeGreaterThan(0);
+  });
+
+  it('у остановки — почти полностью резкий', () => {
+    const near = infoVisibility(3.05);
+    expect(near.opacity).toBe(1);
+    const leaving = infoVisibility(3.25);
+    expect(leaving.opacity).toBeGreaterThan(0);
+    expect(leaving.opacity).toBeLessThan(1);
   });
 });
 
