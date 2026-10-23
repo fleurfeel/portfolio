@@ -318,7 +318,8 @@ const cardVars = (i: number) => {
       --u: calc(100vw / 1440);
       --pad-x: 4.1667vw;
       --title-fs: 4.0278vw;
-      --title-top: 9.1667vw;
+      /* заголовок на той же высоте, что «Обо мне» (src/components/about/About.astro) */
+      --title-top: 6.9444vw;
       --mascot-w: min(34.375vw, 55svh);
       --mascot-bottom: 9.56svh;
       --card-x: calc(43.0556vw + 156 * var(--u));
@@ -393,7 +394,7 @@ const cardVars = (i: number) => {
       --u: calc(1px + (100vw - 1440px) / 960);
       --pad-x: calc(60px - 20 * (100vw - 1440px) / 480);
       --title-fs: calc(58px + 6 * (100vw - 1440px) / 480);
-      --title-top: 132px;
+      --title-top: calc(100px - 1 * (100vw - 1440px) / 480);
       --mascot-w: min(calc(495px + 126 * (100vw - 1440px) / 480), 64.69svh);
       --mascot-bottom: calc(86px - 34 * (100vw - 1440px) / 480);
       /* на десктопе инфо отодвинуто от края до 155 px — дуга карточек сдвинута на столько же (851 → 736) */
@@ -415,6 +416,7 @@ const cardVars = (i: number) => {
       --u: 1.5px;
       --pad-x: 40px;
       --title-fs: 64px;
+      --title-top: 99px;
       --mascot-w: min(621px, 64.69svh);
       --mascot-bottom: 52px;
       --card-x: calc(736px + 156 * var(--u));
