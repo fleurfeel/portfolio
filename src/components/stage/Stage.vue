@@ -9,7 +9,7 @@ import { shouldTrackCursor } from '../../lib/mascot/math';
 import { hasHardwareWebGL } from '../../lib/mascot/webgl-support';
 import { offsetRect, posterBounds, visiblePoster } from '../../lib/stage/dom';
 import { approach, overallProgress, percentLabel } from '../../lib/preloader/progress';
-import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, cardPose, stageProgress, transitionState } from '../../lib/stage/math';
+import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, sceneState, stageProgress } from '../../lib/stage/math';
 
 const props = defineProps<{ modelSizes: Record<string, number> }>();
 
@@ -68,7 +68,9 @@ onMounted(() => {
   const pin = stage?.querySelector<HTMLElement>('[data-pin]');
   const heroLayer = stage?.querySelector<HTMLElement>('[data-layer="hero"]');
   const projectsLayer = stage?.querySelector<HTMLElement>('[data-layer="projects"]');
-  if (!layer || !stage || !pin || !heroLayer || !projectsLayer) return;
+  const aboutLayer = stage?.querySelector<HTMLElement>('[data-layer="about"]');
+  const tail = stage?.nextElementSibling instanceof HTMLElement && stage.nextElementSibling.hasAttribute('data-stage-tail') ? stage.nextElementSibling : null;
+  if (!layer || !stage || !pin || !heroLayer || !projectsLayer || !aboutLayer) return;
 
   const cards = [...stage.querySelectorAll<HTMLElement>('[data-card]')];
   const infos = [...stage.querySelectorAll<HTMLElement>('[data-info]')];
@@ -79,7 +81,7 @@ onMounted(() => {
 
   stage.dataset.fx = '';
 
-  let transition = transitionState(0, reducedMotion);
+  let transition = sceneState(0, 0, reducedMotion);
   let shownInfo = 0;
   let invalidate3d = () => {};
 
@@ -94,12 +96,13 @@ onMounted(() => {
   function update() {
     frame = 0;
     const vh = pin.clientHeight;
-    const { t, active } = stageProgress(-stage.getBoundingClientRect().top, vh, count);
-    transition = transitionState(t, reducedMotion);
+    const { t, active, u } = stageProgress(-stage.getBoundingClientRect().top, vh, count);
+    transition = sceneState(t, u, reducedMotion);
 
     // 3D-маскот не размывается: он — сквозная нить между экранами
     setLayer(heroLayer, transition.heroOpacity, transition.heroBlur);
     setLayer(projectsLayer, transition.projectsOpacity, transition.projectsBlur);
+    setLayer(aboutLayer, transition.aboutOpacity, transition.aboutBlur);
 
     const table = mobile.matches ? CARDS_MOBILE : CARDS_DESKTOP;
     cards.forEach((card, i) => {
@@ -136,13 +139,21 @@ onMounted(() => {
     const card = el.closest<HTMLElement>('[data-card]');
     if (card) return scrollToStage(STAGE.transition + STAGE.step * Number(card.dataset.card));
     if (heroLayer.contains(el) && transition.phase !== 'hero') return scrollToStage(0);
-    if (projectsLayer.contains(el) && transition.projectsOpacity < 1) scrollToStage(STAGE.transition);
+    if (projectsLayer.contains(el) && transition.projectsOpacity < 1) return scrollToStage(STAGE.transition);
+    if (aboutLayer.contains(el) && transition.aboutOpacity < 1) scrollToStage(aboutStart(count) + STAGE.about);
+  };
+
+  // «Обо мне» выше экрана (телефон): под сценой нужен «хвост» на остаток секции
+  const sizeTail = () => {
+    if (tail) tail.style.height = `${Math.max(0, aboutLayer.offsetHeight - pin.clientHeight)}px`;
   };
 
   const ro = new ResizeObserver(() => {
+    sizeTail();
     schedule();
   });
   ro.observe(pin);
+  ro.observe(aboutLayer);
   addEventListener('scroll', schedule, { passive: true });
   mobile.addEventListener('change', schedule);
   stage.addEventListener('focusin', onFocus);
@@ -153,6 +164,7 @@ onMounted(() => {
     stage.removeEventListener('focusin', onFocus);
     cancelAnimationFrame(frame);
   });
+  sizeTail();
   update();
 
   // --- 3D
@@ -171,9 +183,11 @@ onMounted(() => {
       const measure = () => {
         const hero = visiblePoster(heroLayer, 'hero')!;
         const projects = visiblePoster(projectsLayer, 'projects');
+        const about = visiblePoster(aboutLayer, 'about');
         return {
           hero: { rect: offsetRect(hero, pin), bounds: posterBounds(hero) },
           projects: projects ? { rect: offsetRect(projects, pin), bounds: posterBounds(projects) } : null,
+          about: about ? { rect: offsetRect(about, pin), bounds: posterBounds(about) } : null,
         };
       };
       const scene = await createMascotScene({

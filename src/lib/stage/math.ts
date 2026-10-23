@@ -1,4 +1,4 @@
-// Чистая математика сцены «первый экран → проекты»: без DOM и three.js, покрыта тестами.
+// Чистая математика сцены «первый экран → проекты → обо мне»: без DOM и three.js, покрыта тестами.
 
 /** Длины участков скролла в экранах (100svh). */
 export const STAGE = {
@@ -6,8 +6,10 @@ export const STAGE = {
   transition: 1.2,
   /** прокрутка на один кейс */
   step: 0.6,
-  /** пауза на последнем кейсе перед выходом из сцены */
+  /** пауза на последнем кейсе перед переходом к «Обо мне» */
   hold: 0.4,
+  /** переход «туман» к «Обо мне»: маскот переходит в центр */
+  about: 1,
   /** блюр экранов в середине перехода, px */
   maxBlur: 14,
 } as const;
@@ -18,18 +20,25 @@ const smoothstep = (a: number, b: number, v: number) => {
   return x * x * (3 - 2 * x);
 };
 
-/** Где мы в сцене: t — переход 0…1, active — дробный индекс активного кейса. */
+/** Где начинается переход к «Обо мне», в экранах от начала сцены. */
+export const aboutStart = (count: number) => STAGE.transition + STAGE.step * Math.max(0, count - 1) + STAGE.hold;
+
+/**
+ * Где мы в сцене: t — переход к проектам 0…1, active — дробный индекс активного кейса,
+ * u — переход к «Обо мне» 0…1.
+ */
 export function stageProgress(scrolled: number, viewport: number, count: number) {
   const s = Math.max(0, scrolled / viewport);
   return {
     t: clamp(s / STAGE.transition),
     active: clamp((s - STAGE.transition) / STAGE.step, 0, Math.max(0, count - 1)),
+    u: clamp((s - aboutStart(count)) / STAGE.about),
   };
 }
 
 /** Полная высота сцены (sticky-экран + длина скролла). */
 export function stageHeight(viewport: number, count: number) {
-  return viewport * (1 + STAGE.transition + STAGE.step * Math.max(0, count - 1) + STAGE.hold);
+  return viewport * (1 + aboutStart(count) + STAGE.about);
 }
 
 export interface TransitionState {
@@ -79,6 +88,62 @@ export function transitionState(t: number, reducedMotion: boolean): TransitionSt
     mascotMix: smoothstep(0.1, 0.9, t),
     logos: 1 - smoothstep(0, 0.4, t),
     pointing,
+  };
+}
+
+/** Переход «туман» от проектов к «Обо мне»: та же механика, маскот переходит в центр экрана. */
+export function aboutTransitionState(u: number, reducedMotion: boolean) {
+  if (reducedMotion) {
+    return {
+      projectsOpacity: 1 - smoothstep(0.35, 0.5, u),
+      projectsBlur: 0,
+      aboutOpacity: smoothstep(0.5, 0.65, u),
+      aboutBlur: 0,
+      aboutMix: u < 0.5 ? 0 : 1,
+    };
+  }
+  return {
+    projectsOpacity: 1 - smoothstep(0.05, 0.5, u),
+    projectsBlur: STAGE.maxBlur * smoothstep(0, 0.5, u),
+    aboutOpacity: smoothstep(0.45, 0.9, u),
+    aboutBlur: STAGE.maxBlur * (1 - smoothstep(0.45, 1, u)),
+    aboutMix: smoothstep(0.1, 0.9, u),
+  };
+}
+
+export interface SceneState {
+  phase: 'hero' | 'projects' | 'about';
+  heroOpacity: number;
+  heroBlur: number;
+  projectsOpacity: number;
+  projectsBlur: number;
+  aboutOpacity: number;
+  aboutBlur: number;
+  /** маскот: 0 — первый экран, 1 — проекты */
+  mascotMix: number;
+  /** маскот: 0 — где был, 1 — центр «Обо мне» */
+  aboutMix: number;
+  logos: number;
+  pointing: number;
+}
+
+/** Всё состояние сцены по двум переходам: что видно, что размыто и где маскот. */
+export function sceneState(t: number, u: number, reducedMotion: boolean): SceneState {
+  const a = transitionState(t, reducedMotion);
+  const b = aboutTransitionState(u, reducedMotion);
+  return {
+    phase: u >= 0.5 ? 'about' : a.phase,
+    heroOpacity: a.heroOpacity,
+    heroBlur: a.heroBlur,
+    projectsOpacity: Math.min(a.projectsOpacity, b.projectsOpacity),
+    projectsBlur: Math.max(a.projectsBlur, b.projectsBlur),
+    aboutOpacity: b.aboutOpacity,
+    aboutBlur: b.aboutBlur,
+    mascotMix: a.mascotMix,
+    aboutMix: b.aboutMix,
+    logos: a.logos,
+    // к «Обо мне» рука опускается
+    pointing: a.pointing * (1 - smoothstep(0, 0.6, u)),
   };
 }
 

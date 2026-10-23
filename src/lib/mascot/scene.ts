@@ -23,7 +23,7 @@ import {
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import type { TransitionState } from '../stage/math';
+import type { SceneState } from '../stage/math';
 import { bytesFraction } from '../preloader/progress';
 import { lerpFit } from '../stage/math';
 import { type PosterBounds, type Rect, clampPixelRatio, damp, envelope, fitCamera, orbitPosition, posterTarget } from './math';
@@ -84,9 +84,9 @@ export interface MascotSceneOptions {
   /** слой, в который встаёт canvas; по его размеру считается кадр */
   container: HTMLElement;
   /** рамки PNG-постеров относительно container (без учёта transform): 3D встаёт ровно на их место */
-  measure: () => { hero: PosterInfo; projects: PosterInfo | null };
-  /** состояние перехода «первый экран → проекты» */
-  getTransition: () => TransitionState;
+  measure: () => { hero: PosterInfo; projects: PosterInfo | null; about: PosterInfo | null };
+  /** состояние сцены «первый экран → проекты → обо мне» */
+  getTransition: () => SceneState;
   /** следить за курсором (только мышь и без prefers-reduced-motion) */
   trackCursor: boolean;
   reducedMotion: boolean;
@@ -274,6 +274,7 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
   type Fit = ReturnType<typeof fitCamera>;
   let fitHero: Fit = { distance: 3, x: 0, y: H / 2 };
   let fitProjects: Fit | null = null;
+  let fitAbout: Fit | null = null;
   let radius = H * 0.6;
   function layout() {
     const w = container.clientWidth;
@@ -283,18 +284,20 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    const { hero, projects } = measure();
+    const { hero, projects, about } = measure();
     fitHero = fitCamera({ width: w, height: h, ...posterTarget(hero.rect, hero.bounds) }, H, FOV);
     fitProjects = projects ? fitCamera({ width: w, height: h, ...posterTarget(projects.rect, projects.bounds) }, H, FOV) : null;
+    fitAbout = about ? fitCamera({ width: w, height: h, ...posterTarget(about.rect, about.bounds) }, H, FOV) : null;
     radius = H * (w < 1024 ? 0.5 : 0.6);
     placeCamera();
   }
 
-  // переход: маскот плавно переезжает с места постера первого экрана на место постера экрана проектов
+  // переходы: маскот плавно переезжает между местами постеров первого экрана, проектов и «Обо мне»
   let transition = getTransition();
   function placeCamera() {
     transition = getTransition();
-    const fit = lerpFit(fitHero, fitProjects ?? fitHero, transition.mascotMix);
+    const toProjects = lerpFit(fitHero, fitProjects ?? fitHero, transition.mascotMix);
+    const fit = lerpFit(toProjects, fitAbout ?? toProjects, transition.aboutMix);
     camera.position.set(fit.x, fit.y, fit.distance);
     orbit.visible = transition.logos > 0.01;
   }

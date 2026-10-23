@@ -1,0 +1,512 @@
+---
+// «Обо мне». Макеты Figma: Mobile 393 (484:361), Laptop 1440 (480:253), Desktop 1920 (481:290).
+// На ноутбуке и десктопе — один экран (третий слой сцены), на телефоне — длинная секция,
+// которая после перехода просто скроллится дальше. Маскот — постер, 3D встаёт на его место.
+import { Picture } from 'astro:assets';
+import avatar from '../../assets/hero/avatar.png';
+import mascot from '../../assets/hero/mascot.png';
+import { education, experienceTitle, intro, jobs, resumeUrl } from '../../data/about';
+---
+
+<section class="about" aria-labelledby="about-title">
+  <h2 id="about-title" class="about__title">Обо мне</h2>
+
+  <div class="about__mascot">
+    <Picture
+      src={avatar}
+      formats={['avif', 'webp']}
+      widths={[400, 600, 900, 1215]}
+      sizes="(min-width: 1920px) 598px, 32vw"
+      alt=""
+      class="about__poster about__poster--lg"
+      data-mascot-poster="about"
+      data-bounds="avatar"
+      loading="lazy"
+    />
+    <Picture
+      src={mascot}
+      formats={['avif', 'webp']}
+      widths={[200, 400, 600]}
+      sizes="44vw"
+      alt=""
+      class="about__poster about__poster--m"
+      data-mascot-poster="about"
+      data-bounds="mascot"
+      loading="lazy"
+    />
+  </div>
+
+  <p class="about__intro">{intro}</p>
+
+  <div class="about__edu">
+    <h3 class="about__subtitle">Образование</h3>
+    <ol class="about__timeline about__timeline--edu">
+      {
+        education.map((item) => (
+          <li class:list={['about__edu-item', { 'about__edu-item--parallel': item.parallel }]}>
+            <p class="about__edu-title">
+              {item.title.map((line, i) => (i ? [<br />, line] : line))}
+            </p>
+            <p class="about__edu-program">{item.program}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <div class="about__exp">
+    <h3 class="about__subtitle">{experienceTitle}</h3>
+    <ol class="about__timeline about__timeline--exp">
+      {
+        jobs.map((job) => (
+          <li class="about__job">
+            <p class="about__company">{job.company}</p>
+            <p class="about__role">{job.role}</p>
+            <p class="about__period">{job.period}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <a class="about__cta" href={resumeUrl} download>Скачать резюме</a>
+  </div>
+</section>
+
+<style>
+  .about {
+    position: relative;
+    color: var(--color-text);
+    pointer-events: none; /* пустые места пропускают клики к 3D-сцене */
+  }
+
+  .about a {
+    pointer-events: auto;
+  }
+
+  .about a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .about__title {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .about__mascot {
+    transition: opacity 0.6s ease;
+  }
+
+  /* 3D готов — постер уходит */
+  :global([data-stage][data-mascot='ready']) .about__mascot {
+    opacity: 0;
+  }
+
+  .about__mascot :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .about__intro {
+    line-height: 1.3;
+  }
+
+  .about__subtitle {
+    font-weight: 400;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .about__timeline {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+
+  /* --- таймлайн образования: точки сверху и снизу, параллельная учёба — пунктиром --- */
+  .about__edu-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .about__edu-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: calc(-1 * var(--edu-gap));
+    left: -16px;
+    width: 1px;
+    background: var(--color-accent);
+  }
+
+  .about__edu-item:last-child::before {
+    bottom: 0;
+  }
+
+  .about__edu-item--parallel::before {
+    top: 4px;
+    bottom: calc(4px - var(--edu-gap));
+    background: repeating-linear-gradient(to bottom, var(--color-accent) 0 8px, transparent 8px 16px);
+  }
+
+  .about__timeline--edu::before,
+  .about__timeline--edu::after {
+    content: '';
+    position: absolute;
+    left: -21.5px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--color-accent);
+  }
+
+  .about__timeline--edu::before {
+    top: 3px;
+  }
+
+  .about__timeline--edu::after {
+    bottom: -11px;
+  }
+
+  /* --- таймлайн опыта: линия и точка у каждого места работы --- */
+  .about__job {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .about__job::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--color-accent);
+  }
+
+  .about__timeline--exp::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: -11px;
+    width: 1px;
+    background: var(--color-accent);
+  }
+
+  .about__timeline--exp::after {
+    content: '';
+    position: absolute;
+    bottom: -11px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--color-accent);
+  }
+
+  .about__company {
+    margin-bottom: 12px;
+  }
+
+  .about__role {
+    margin-bottom: 8px;
+  }
+
+  .about__period {
+    color: var(--color-secondary);
+  }
+
+  .about__cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 38px;
+    border-radius: 42px;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    transition: opacity 0.2s ease;
+  }
+
+  .about__cta:hover {
+    opacity: 0.88;
+  }
+
+  /* ---------- мобильная раскладка (< 1024) — макет 393, обычный поток ---------- */
+  @media (max-width: 1023.98px) {
+    .about {
+      --edu-gap: 16px;
+
+      display: flex;
+      flex-direction: column;
+      padding: 42px 20px 56px;
+    }
+
+    .about__mascot {
+      order: -1; /* в мобильном макете маскот над заголовком */
+      align-self: center;
+      width: min(43.5vw, 220px);
+    }
+
+    .about__mascot :global(.about__poster--lg) {
+      display: none;
+    }
+
+    .about__title {
+      margin-top: 12px;
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .about__intro {
+      margin-top: 32px;
+      font-size: 16px;
+    }
+
+    .about__edu {
+      margin-top: 41px;
+    }
+
+    .about__exp {
+      margin-top: 31px;
+    }
+
+    .about__subtitle {
+      margin-bottom: 16px;
+      font-size: 24px;
+    }
+
+    .about__timeline {
+      margin-left: 21px;
+    }
+
+    .about__timeline--edu {
+      gap: var(--edu-gap);
+    }
+
+    .about__edu-title {
+      font-size: 16px;
+    }
+
+    .about__edu-program {
+      font-size: 14px;
+    }
+
+    /* на телефоне линия опыта — слева, как у образования */
+    .about__timeline--exp {
+      gap: 20px;
+    }
+
+    .about__timeline--exp::before {
+      left: -16px;
+    }
+
+    .about__timeline--exp::after,
+    .about__job::after {
+      left: -21.5px;
+    }
+
+    .about__company {
+      font-size: 18px;
+    }
+
+    .about__role {
+      font-size: 16px;
+    }
+
+    .about__period {
+      font-size: 14px;
+    }
+
+    .about__cta {
+      display: none; /* в мобильном макете кнопки нет */
+    }
+  }
+
+  /* ---------- ноутбук и десктоп (≥ 1024): один экран ---------- */
+  @media (min-width: 1024px) {
+    /* 1024–1440: значения ноутбучного макета × (ширина / 1440) */
+    .about {
+      --k: calc(100vw / 1440);
+      --pad-x: calc(60 * var(--k));
+      --title-top: calc(100 * var(--k));
+      --title-fs: calc(58 * var(--k));
+      --col-top: calc(220 * var(--k));
+      --col-w: calc(424 * var(--k));
+      --sub-fs: calc(32 * var(--k));
+      --list-gap: calc(46 * var(--k));
+      --edu-title-fs: max(14px, calc(16 * var(--k)));
+      --edu-program-fs: max(13px, calc(14 * var(--k)));
+      --edu-gap: calc(20 * var(--k));
+      --company-fs: max(15px, calc(20 * var(--k)));
+      --role-fs: max(14px, calc(16 * var(--k)));
+      --period-fs: max(14px, calc(16 * var(--k)));
+      --job-gap: calc(30 * var(--k));
+      --intro-top: calc(693 * var(--k));
+      --intro-fs: max(15px, calc(20 * var(--k)));
+      --cta-gap: calc(22 * var(--k));
+      --mascot-w: min(calc(425 * var(--k)), 47svh);
+      --mascot-dy: calc(57.5 * var(--k));
+
+      height: 100svh;
+      min-height: 640px;
+    }
+
+    .about__title {
+      position: absolute;
+      top: var(--title-top);
+      left: var(--pad-x);
+      font-size: var(--title-fs);
+    }
+
+    .about__mascot {
+      position: absolute;
+      top: calc(50% + var(--mascot-dy) - var(--mascot-w) * 1295 / 1215 / 2);
+      left: calc(50% - var(--mascot-w) / 2); /* без transform: 3D меряет постер по offset* */
+      width: var(--mascot-w);
+    }
+
+    .about__mascot :global(.about__poster--m) {
+      display: none;
+    }
+
+    .about__intro {
+      position: absolute;
+      top: var(--intro-top);
+      left: var(--pad-x);
+      width: var(--col-w);
+      font-size: var(--intro-fs);
+    }
+
+    .about__edu,
+    .about__exp {
+      position: absolute;
+      top: var(--col-top);
+      width: var(--col-w);
+    }
+
+    .about__edu {
+      left: var(--pad-x);
+    }
+
+    .about__exp {
+      right: var(--pad-x);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .about__subtitle {
+      margin-bottom: var(--list-gap);
+      font-size: var(--sub-fs);
+    }
+
+    .about__timeline--edu {
+      gap: var(--edu-gap);
+      margin-left: 21px;
+      width: calc(100% - 21px);
+    }
+
+    .about__edu-title {
+      font-size: var(--edu-title-fs);
+    }
+
+    .about__edu-program {
+      font-size: var(--edu-program-fs);
+    }
+
+    /* линия опыта — у правого края колонки */
+    .about__timeline--exp {
+      gap: var(--job-gap);
+    }
+
+    .about__timeline--exp::before {
+      right: 5px;
+    }
+
+    .about__timeline--exp::after,
+    .about__job::after {
+      right: 0;
+    }
+
+    .about__job::after {
+      top: -3px;
+    }
+
+    .about__company {
+      font-size: var(--company-fs);
+    }
+
+    .about__role {
+      font-size: var(--role-fs);
+    }
+
+    .about__period {
+      font-size: var(--period-fs);
+    }
+
+    .about__cta {
+      margin-top: var(--cta-gap);
+    }
+  }
+
+  /* 1440–1920: плавно от ноутбучного макета к десктопному */
+  @media (min-width: 1440px) {
+    .about {
+      --pad-x: calc(60px - 20 * (100vw - 1440px) / 480);
+      --title-top: calc(100px - 1 * (100vw - 1440px) / 480);
+      --title-fs: calc(58px + 6 * (100vw - 1440px) / 480);
+      --col-top: calc(220px + 3 * (100vw - 1440px) / 480);
+      --col-w: 424px;
+      --sub-fs: calc(32px + 4 * (100vw - 1440px) / 480);
+      --list-gap: calc(46px - 8 * (100vw - 1440px) / 480);
+      --edu-title-fs: calc(16px + 2 * (100vw - 1440px) / 480);
+      --edu-program-fs: calc(14px + 2 * (100vw - 1440px) / 480);
+      --edu-gap: calc(20px - 4 * (100vw - 1440px) / 480);
+      --company-fs: calc(20px + 2 * (100vw - 1440px) / 480);
+      --role-fs: calc(16px + 2 * (100vw - 1440px) / 480);
+      --period-fs: 16px;
+      --job-gap: calc(30px - 5 * (100vw - 1440px) / 480);
+      --intro-top: calc(693px + 23 * (100vw - 1440px) / 480);
+      --intro-fs: 20px;
+      --cta-gap: calc(22px + 11 * (100vw - 1440px) / 480);
+      --mascot-w: min(calc(425px + 173 * (100vw - 1440px) / 480), 66svh);
+      --mascot-dy: calc(57.5px - 27 * (100vw - 1440px) / 480);
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .about {
+      --pad-x: 40px;
+      --title-top: 99px;
+      --title-fs: 64px;
+      --col-top: 223px;
+      --sub-fs: 36px;
+      --list-gap: 38px;
+      --edu-title-fs: 18px;
+      --edu-program-fs: 16px;
+      --edu-gap: 16px;
+      --company-fs: 22px;
+      --role-fs: 18px;
+      --job-gap: 25px;
+      --intro-top: 716px;
+      --cta-gap: 33px;
+      --mascot-w: min(598px, 66svh);
+      --mascot-dy: 30.5px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .about__mascot,
+    .about__cta {
+      transition: none;
+    }
+  }
+</style>

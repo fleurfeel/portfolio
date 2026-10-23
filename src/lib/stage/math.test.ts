@@ -9,6 +9,8 @@ import {
   stageProgress,
   transitionState,
   lerpFit,
+  aboutTransitionState,
+  sceneState,
 } from './math';
 
 describe('stageProgress', () => {
@@ -16,12 +18,12 @@ describe('stageProgress', () => {
   const n = 7;
 
   it('0 вверху сцены', () => {
-    expect(stageProgress(0, vh, n)).toEqual({ t: 0, active: 0 });
+    expect(stageProgress(0, vh, n)).toEqual({ t: 0, active: 0, u: 0 });
   });
 
   it('переход занимает первые STAGE.transition экранов', () => {
     expect(stageProgress(STAGE.transition * vh * 0.5, vh, n).t).toBeCloseTo(0.5, 6);
-    expect(stageProgress(STAGE.transition * vh, vh, n)).toEqual({ t: 1, active: 0 });
+    expect(stageProgress(STAGE.transition * vh, vh, n)).toEqual({ t: 1, active: 0, u: 0 });
   });
 
   it('после перехода каждый STAGE.step экрана — следующий кейс', () => {
@@ -30,12 +32,19 @@ describe('stageProgress', () => {
   });
 
   it('не выходит за пределы', () => {
-    expect(stageProgress(-500, vh, n)).toEqual({ t: 0, active: 0 });
-    expect(stageProgress(1e6, vh, n)).toEqual({ t: 1, active: n - 1 });
+    expect(stageProgress(-500, vh, n)).toEqual({ t: 0, active: 0, u: 0 });
+    expect(stageProgress(1e6, vh, n)).toEqual({ t: 1, active: n - 1, u: 1 });
   });
 
-  it('высота сцены вмещает экран, переход, все кейсы и паузу в конце', () => {
-    expect(stageHeight(vh, n)).toBeCloseTo(vh * (1 + STAGE.transition + STAGE.step * (n - 1) + STAGE.hold), 6);
+  it('после паузы на последнем кейсе — переход к «Обо мне» (u)', () => {
+    const start = (STAGE.transition + STAGE.step * (n - 1) + STAGE.hold) * vh;
+    expect(stageProgress(start, vh, n).u).toBe(0);
+    expect(stageProgress(start + STAGE.about * vh * 0.5, vh, n).u).toBeCloseTo(0.5, 6);
+    expect(stageProgress(start + STAGE.about * vh * 0.5, vh, n).active).toBe(n - 1);
+  });
+
+  it('высота сцены вмещает экран, оба перехода, все кейсы и паузу', () => {
+    expect(stageHeight(vh, n)).toBeCloseTo(vh * (1 + STAGE.transition + STAGE.step * (n - 1) + STAGE.hold + STAGE.about), 6);
   });
 });
 
@@ -100,6 +109,50 @@ describe('transitionState', () => {
     }
     expect(transitionState(0.2, true).heroOpacity).toBe(1);
     expect(transitionState(0.8, true).projectsOpacity).toBe(1);
+  });
+});
+
+describe('aboutTransitionState', () => {
+  it('u=0 — на экране проекты, «Обо мне» скрыт', () => {
+    expect(aboutTransitionState(0, false)).toMatchObject({ projectsOpacity: 1, projectsBlur: 0, aboutOpacity: 0, aboutMix: 0 });
+  });
+
+  it('u=1 — «Обо мне» резкий, проекты скрыты, маскот в центре', () => {
+    expect(aboutTransitionState(1, false)).toMatchObject({ projectsOpacity: 0, aboutOpacity: 1, aboutBlur: 0, aboutMix: 1 });
+  });
+
+  it('проекты уходят в туман, «Обо мне» проявляется', () => {
+    expect(aboutTransitionState(0.2, false).projectsBlur).toBeLessThan(aboutTransitionState(0.45, false).projectsBlur);
+    expect(aboutTransitionState(0.6, false).aboutBlur).toBeGreaterThan(aboutTransitionState(0.9, false).aboutBlur);
+  });
+
+  it('prefers-reduced-motion: без блюра, маскот переставляется', () => {
+    for (const u of [0, 0.3, 0.6, 1]) {
+      const s = aboutTransitionState(u, true);
+      expect(s.projectsBlur).toBe(0);
+      expect(s.aboutBlur).toBe(0);
+      expect([0, 1]).toContain(s.aboutMix);
+    }
+  });
+});
+
+describe('sceneState', () => {
+  it('в начале — первый экран', () => {
+    expect(sceneState(0, 0, false)).toMatchObject({ phase: 'hero', heroOpacity: 1, projectsOpacity: 0, aboutOpacity: 0 });
+  });
+
+  it('между переходами — проекты, маскот показывает рукой', () => {
+    expect(sceneState(1, 0, false)).toMatchObject({ phase: 'projects', heroOpacity: 0, projectsOpacity: 1, aboutOpacity: 0, pointing: 1 });
+  });
+
+  it('в конце — «Обо мне», рука опущена, проекты скрыты', () => {
+    expect(sceneState(1, 1, false)).toMatchObject({ phase: 'about', projectsOpacity: 0, aboutOpacity: 1, aboutMix: 1, pointing: 0 });
+  });
+
+  it('во время перехода к «Обо мне» рука плавно опускается', () => {
+    const p = sceneState(1, 0.5, false).pointing;
+    expect(p).toBeGreaterThan(0);
+    expect(p).toBeLessThan(1);
   });
 });
 

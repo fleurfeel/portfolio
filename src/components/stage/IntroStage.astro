@@ -1,11 +1,14 @@
 ---
-// Сцена «первый экран → избранные проекты»: оба экрана лежат слоями в одном sticky-экране,
-// между ними — переход «туман» (маскот переезжает между экранами), дальше скролл листает кейсы.
+// Сцена «первый экран → избранные проекты → обо мне»: экраны лежат слоями в одном sticky-экране,
+// между ними — переходы «туман» (маскот переезжает между экранами), между переходами скролл листает кейсы.
+// «Обо мне» на телефоне выше экрана: после сцены sticky-экран уезжает вверх вместе с ней,
+// а «хвост» под сценой даёт место её продолжению (высоту ставит Stage.vue).
 // Без JS (до гидрации Stage.vue) экраны стоят друг под другом обычным потоком.
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { projects } from '../../data/projects';
-import { STAGE } from '../../lib/stage/math';
+import { STAGE, aboutStart } from '../../lib/stage/math';
+import About from '../about/About.astro';
 import Hero from '../hero/Hero.astro';
 import Projects from '../projects/Projects.astro';
 import Stage from './Stage.vue';
@@ -19,24 +22,28 @@ const modelSizes = Object.fromEntries(
     .filter((f) => f.endsWith('.glb'))
     .map((f) => [`/models/${f}`, statSync(join(modelsDir, f)).size]),
 );
-const snaps = [0, ...projects.map((_, i) => STAGE.transition + STAGE.step * i)];
+const end = aboutStart(n) + STAGE.about;
+const snaps = [0, ...projects.map((_, i) => STAGE.transition + STAGE.step * i), end];
 ---
 
 <div
   class="stage"
   data-stage
-  style={`--n:${n};--transition:${STAGE.transition};--step:${STAGE.step};--hold:${STAGE.hold}`}
+  style={`--transition:${STAGE.transition};--end:${end}`}
 >
   <div class="stage__pin" data-pin>
     <div class="stage__layer" data-layer="hero"><Hero /></div>
     <div class="stage__layer" data-layer="projects"><Projects /></div>
+    <div class="stage__layer stage__layer--about" data-layer="about"><About /></div>
     <Stage client:idle modelSizes={modelSizes} />
   </div>
 
-  <!-- цель ссылок «Проекты» / «Смотреть портфолио»: место в скролле, где открыт первый кейс -->
-  <div id="projects" class="stage__anchor"></div>
+  <!-- цели ссылок меню: места в скролле, где открыт первый кейс и «Обо мне» -->
+  <div id="projects" class="stage__anchor" style={`--flow:1;--fx:${STAGE.transition}`}></div>
+  <div id="about" class="stage__anchor" style={`--flow:2;--fx:${end}`}></div>
   {snaps.map((at) => <div class="stage__snap" style={`--at:${at}`} />)}
 </div>
+<div class="stage-tail" data-stage-tail></div>
 
 <style>
   .stage {
@@ -45,7 +52,7 @@ const snaps = [0, ...projects.map((_, i) => STAGE.transition + STAGE.step * i)];
 
   .stage__anchor {
     position: absolute;
-    top: 100svh;
+    top: calc(100svh * var(--flow));
   }
 
   .stage__snap {
@@ -54,14 +61,15 @@ const snaps = [0, ...projects.map((_, i) => STAGE.transition + STAGE.step * i)];
 
   /* ---------- сцена включена (Stage.vue гидрирован) ---------- */
   .stage[data-fx] {
-    height: calc(100svh * (1 + var(--transition) + var(--step) * (var(--n) - 1) + var(--hold)));
+    height: calc(100svh * (1 + var(--end)));
   }
 
+  /* по вертикали не обрезаем: «Обо мне» на телефоне продолжается ниже экрана */
   .stage[data-fx] .stage__pin {
     position: sticky;
     top: 0;
     height: 100svh;
-    overflow: clip;
+    overflow-x: clip;
   }
 
   .stage[data-fx] .stage__layer {
@@ -77,8 +85,13 @@ const snaps = [0, ...projects.map((_, i) => STAGE.transition + STAGE.step * i)];
     pointer-events: none;
   }
 
+  .stage[data-fx] .stage__layer--about {
+    bottom: auto;
+    min-height: 100%;
+  }
+
   .stage[data-fx] .stage__anchor {
-    top: calc(100svh * var(--transition));
+    top: calc(100svh * var(--fx));
   }
 
   .stage[data-fx] .stage__snap {
