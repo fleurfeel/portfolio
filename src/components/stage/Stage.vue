@@ -165,20 +165,27 @@ onMounted(() => {
     if (tail) tail.style.height = `${Math.max(0, aboutLayer.offsetHeight - pin.clientHeight)}px`;
   };
 
-  // манифест: слова переворачиваются, когда секция поднялась примерно на треть экрана;
-  // ушла вниз за экран — сбрасываем, чтобы при следующем заходе эффект проигрался снова
-  if (manifesto && !reducedMotion) {
-    manifesto.dataset.reveal = manifesto.getBoundingClientRect().top < innerHeight * 0.7 ? 'in' : '';
+  // манифест: слова переворачиваются, когда сам текст поднялся на 20% экрана (а не верх секции —
+  // иначе волна успевает проиграть ещё за краем экрана); текст ушёл вниз за экран — сбрасываем,
+  // чтобы при следующем заходе эффект проигрался снова
+  const manifestoText = manifesto?.querySelector<HTMLElement>('.manifesto__text');
+  if (manifesto && manifestoText && !reducedMotion) {
+    manifesto.dataset.reveal = manifestoText.getBoundingClientRect().top < innerHeight * 0.8 ? 'in' : '';
     const reveal = new IntersectionObserver(
       ([e]) => {
-        if (!e) return;
-        if (e.isIntersecting) manifesto.dataset.reveal = 'in';
-        else if (e.boundingClientRect.top > 0) manifesto.dataset.reveal = '';
+        if (e?.isIntersecting) manifesto.dataset.reveal = 'in';
       },
-      { rootMargin: '0px 0px -30% 0px' },
+      { rootMargin: '0px 0px -20% 0px' },
     );
-    reveal.observe(manifesto);
-    cleanups.push(() => reveal.disconnect());
+    const reset = new IntersectionObserver(([e]) => {
+      if (e && !e.isIntersecting && e.boundingClientRect.top > 0) manifesto.dataset.reveal = '';
+    });
+    reveal.observe(manifestoText);
+    reset.observe(manifestoText);
+    cleanups.push(() => {
+      reveal.disconnect();
+      reset.disconnect();
+    });
   }
 
   // «Как я работаю» на ноутбуке и десктопе — закреплённый экран, шаг = 60% экрана.

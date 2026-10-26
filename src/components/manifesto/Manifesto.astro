@@ -1,6 +1,6 @@
 ---
 // Манифест: голова маскота и крупная цитата. Макеты Figma: Mobile 393 (491:312), Laptop 1440 (491:253), Desktop 1920 (491:259).
-// Слова «переворачиваются» волной, когда секция поднялась примерно на треть экрана: проигрыш по времени,
+// Слова «переворачиваются» волной, когда сам текст поднялся на 20% экрана: проигрыш по времени,
 // не по скроллу, — иначе при прокрутке колесом эффект проскакивает незаметно. Включает и запускает
 // остров Stage.vue (атрибут data-reveal: '' — ждём, 'in' — играем). Без JS и при reduced motion текст виден сразу.
 // Голова — постер: 3D-маскот из сцены перелетает сюда и остаётся одной головой (тело растворяется).
@@ -133,7 +133,7 @@ const words = text.split(' ');
   /* скрытие мгновенное (секция в этот момент за экраном), анимация — только на появление */
   .manifesto[data-reveal] .manifesto__word {
     opacity: 0;
-    transform: translateY(0.35em) rotateX(-90deg);
+    transform: translateY(0.6em) rotateX(-95deg);
     transform-origin: 50% 100%;
   }
 
@@ -141,9 +141,9 @@ const words = text.split(' ');
     opacity: 1;
     transform: none;
     transition:
-      opacity 0.5s ease,
-      transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
-    transition-delay: calc(var(--i) * 28ms);
+      opacity 0.6s ease,
+      transform 1s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i) * 45ms);
   }
 
   @media (prefers-reduced-motion: reduce) {
