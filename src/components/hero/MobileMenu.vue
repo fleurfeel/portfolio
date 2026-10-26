@@ -3,6 +3,9 @@
 // Макета открытого состояния пока нет — временный вид из токенов.
 import { ref } from 'vue';
 
+// два корневых элемента (кнопка и панель) — служебные атрибуты Astro не наследуем
+defineOptions({ inheritAttrs: false });
+
 defineProps<{ links: { href: string; label: string }[]; contact: { href: string; label: string } }>();
 
 const panel = ref<HTMLElement>();

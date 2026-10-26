@@ -9,7 +9,7 @@ import { shouldTrackCursor } from '../../lib/mascot/math';
 import { hasHardwareWebGL } from '../../lib/mascot/webgl-support';
 import { offsetRect, posterBounds, visiblePoster } from '../../lib/stage/dom';
 import { approach, overallProgress, percentLabel } from '../../lib/preloader/progress';
-import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, infoVisibility, sceneState, stageProgress } from '../../lib/stage/math';
+import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, headProgress, infoVisibility, sceneState, stageProgress } from '../../lib/stage/math';
 
 const props = defineProps<{ modelSizes: Record<string, number> }>();
 
@@ -71,6 +71,9 @@ onMounted(() => {
   const aboutLayer = stage?.querySelector<HTMLElement>('[data-layer="about"]');
   const tail = stage?.nextElementSibling instanceof HTMLElement && stage.nextElementSibling.hasAttribute('data-stage-tail') ? stage.nextElementSibling : null;
   if (!layer || !stage || !pin || !heroLayer || !projectsLayer || !aboutLayer) return;
+  // манифест после сцены: там 3D-маскот остаётся одной головой
+  const manifesto = document.querySelector<HTMLElement>('[data-manifesto]');
+  const headPoster = manifesto?.querySelector<HTMLElement>('[data-mascot-poster="head"]') ?? null;
 
   const cards = [...stage.querySelectorAll<HTMLElement>('[data-card]')];
   const infos = [...stage.querySelectorAll<HTMLElement>('[data-info]')];
@@ -131,6 +134,8 @@ onMounted(() => {
       infos[current]?.removeAttribute('inert');
       shownInfo = current;
     }
+    // холст фиксирован во весь экран: клики по маскоту — только пока сцена на экране
+    layer.style.pointerEvents = pin.getBoundingClientRect().top < -1 ? 'none' : '';
     invalidate3d();
   }
   const schedule = () => {
@@ -156,8 +161,15 @@ onMounted(() => {
     if (tail) tail.style.height = `${Math.max(0, aboutLayer.offsetHeight - pin.clientHeight)}px`;
   };
 
+  // рамка PNG-головы манифеста в документе (по offset*, без анимации появления)
+  let headDoc = headPoster ? offsetRect(headPoster, document.body) : null;
+  const measureHead = () => {
+    headDoc = headPoster ? offsetRect(headPoster, document.body) : null;
+  };
+
   const ro = new ResizeObserver(() => {
     sizeTail();
+    measureHead();
     schedule();
   });
   ro.observe(pin);
@@ -210,6 +222,13 @@ onMounted(() => {
         container: layer,
         measure,
         getTransition: () => transition,
+        getDynamic: () => {
+          const pinTop = pin.getBoundingClientRect().top;
+          const head = headDoc ? { ...headDoc, top: headDoc.top - scrollY } : null;
+          const headMix = manifesto ? headProgress(manifesto.getBoundingClientRect().top, innerHeight) : 0;
+          return { pinTop, head, headMix };
+        },
+        observe: manifesto ? [pin, manifesto] : [pin],
         reducedMotion,
         trackCursor: shouldTrackCursor({ canHover, reducedMotion }),
         onReady: () => {
@@ -242,7 +261,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .mascot-layer {
-  position: absolute;
+  /* во весь экран: маскот перелетает из сцены в манифест */
+  position: fixed;
   inset: 0;
   z-index: 1;
   opacity: 0;

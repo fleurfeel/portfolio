@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   AVATAR_POSTER_BOUNDS,
+  HEAD_POSTER,
+  headPosterTarget,
+  bodyCut,
   MASCOT_POSTER_BOUNDS,
   eyeHeight,
   clampPixelRatio,
@@ -71,6 +74,39 @@ describe('posterTarget для других постеров', () => {
     const t = posterTarget({ left: 0, top: 0, width: 100, height: 200 });
     expect(t.eyeY).toBeGreaterThan(t.top);
     expect(t.eyeY).toBeLessThan(t.bottom);
+  });
+});
+
+describe('headPosterTarget', () => {
+  it('голова на PNG — верх модели; ступни продолжены вниз пропорционально', () => {
+    const rect = { left: 100, top: 200, width: 200, height: 177 };
+    const t = headPosterTarget(rect);
+    const headTop = 200 + 177 * HEAD_POSTER.top;
+    const headBottom = 200 + 177 * HEAD_POSTER.bottom;
+    expect(t.top).toBeCloseTo(headTop, 6);
+    // низ головы на PNG — это высота HEAD_POSTER.cutAt от ступней
+    const pxPerH = (headBottom - headTop) / (1 - HEAD_POSTER.cutAt);
+    expect(t.bottom).toBeCloseTo(headTop + pxPerH, 6);
+    expect(t.centerX).toBeCloseTo(100 + 200 * HEAD_POSTER.centerX, 6);
+  });
+
+  it('с fitCamera: макушка и низ головы встают на края головы на PNG', () => {
+    const rect = { left: 860, top: 181, width: 200, height: 177 };
+    const t = headPosterTarget(rect);
+    const H = 0.98;
+    const cam = fitCamera({ width: 1920, height: 960, ...t }, H, 28);
+    const visH = 2 * cam.distance * Math.tan((28 * Math.PI) / 360);
+    const py = (y: number) => 960 / 2 - (y - cam.y) / (visH / 960);
+    expect(py(H)).toBeCloseTo(181 + 177 * HEAD_POSTER.top, 4);
+    expect(py(H * HEAD_POSTER.cutAt)).toBeCloseTo(181 + 177 * HEAD_POSTER.bottom, 4);
+  });
+});
+
+describe('bodyCut', () => {
+  it('0 — тело целиком (срез ниже ступней), 1 — остаётся голова', () => {
+    expect(bodyCut(0, 1)).toBeLessThan(0);
+    expect(bodyCut(1, 1)).toBeCloseTo(HEAD_POSTER.cutAt, 6);
+    expect(bodyCut(0.5, 1)).toBeGreaterThan(bodyCut(0.25, 1));
   });
 });
 

@@ -12,6 +12,7 @@ import {
   aboutTransitionState,
   sceneState,
   infoVisibility,
+  headProgress,
 } from './math';
 
 describe('stageProgress', () => {
@@ -174,6 +175,24 @@ describe('infoVisibility', () => {
     const leaving = infoVisibility(3.25);
     expect(leaving.opacity).toBeGreaterThan(0);
     expect(leaving.opacity).toBeLessThan(1);
+  });
+});
+
+describe('headProgress', () => {
+  const vh = 1000;
+  it('манифест ещё под экраном — 0', () => {
+    expect(headProgress(vh, vh)).toBe(0);
+    expect(headProgress(vh * 1.5, vh)).toBe(0);
+  });
+
+  it('манифест почти встал на экран — 1', () => {
+    expect(headProgress(vh * 0.15, vh)).toBe(1);
+    expect(headProgress(-vh, vh)).toBe(1);
+  });
+
+  it('плавно и только вперёд', () => {
+    const v = [0.9, 0.7, 0.5, 0.3].map((f) => headProgress(vh * f, vh));
+    for (let i = 1; i < v.length; i++) expect(v[i]).toBeGreaterThan(v[i - 1]!);
   });
 });
 

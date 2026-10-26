@@ -221,6 +221,14 @@ export function infoVisibility(active: number) {
   return { opacity: 1 - k, blur: 6 * k };
 }
 
+/**
+ * Переход «тело → голова»: по тому, где верх секции манифеста (px от верха экрана).
+ * 0 — манифест ещё под экраном, 1 — почти встал на место.
+ */
+export function headProgress(manifestoTop: number, viewport: number) {
+  return smoothstep(0, 0.85, (viewport - manifestoTop) / viewport);
+}
+
 export function formatCounter(index: number, count: number) {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(index + 1)}/${pad(count)}`;

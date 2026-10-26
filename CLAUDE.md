@@ -22,7 +22,7 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 - `src/components/stage/` — скролл-сцена: первый экран, «Избранные проекты» и «Обо мне» слоями в одном sticky-экране, переходы «туман» и карусель (`Stage.vue`, математика в `src/lib/stage/math.ts`)
 - `src/data/about.ts` — тексты «Обо мне» (образование, опыт); резюме — `public/resume.pdf`
 - `src/data/projects.ts` — кейсы, страницы `/projects` и `/projects/[slug]`
-- `src/components/manifesto/` — цитата-манифест после сцены; переворот слов на CSS scroll-driven animations (без JS)
+- `src/components/manifesto/` — цитата-манифест после сцены; переворот слов на CSS scroll-driven animations (без JS); 3D-маскот прилетает сюда одной головой (холст сцены фиксирован во весь экран)
 - `tests/unit/` — Vitest, `tests/e2e/` — Playwright, `lighthouserc.cjs` — бюджет Lighthouse
 
 ## Правила

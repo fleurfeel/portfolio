@@ -17,6 +17,13 @@ export const MASCOT_POSTER_BOUNDS: PosterBounds = { top: 182 / 2400, bottom: 213
 /** Рендер для экрана проектов (src/assets/hero/avatar.png, 1215×1295). */
 export const AVATAR_POSTER_BOUNDS: PosterBounds = { top: 14 / 1295, bottom: 1255 / 1295, eye: 0.494, centerX: (64 + 1141) / 2 / 1215 };
 
+/**
+ * Голова маскота на PNG манифеста (src/assets/manifesto/head.png, 1334×1179).
+ * Низ головы (кудри под подбородком) — на высоте cutAt·H от ступней: ширина кудрей
+ * на этом PNG и на полном рендере одинакова (0,859 H), отсюда и считается.
+ */
+export const HEAD_POSTER = { top: 28 / 1179, bottom: 1132 / 1179, centerX: (5 + 1333) / 2 / 1334, cutAt: 0.2857 } as const;
+
 export interface Rect {
   left: number;
   top: number;
@@ -32,6 +39,22 @@ export function posterTarget(poster: Rect, bounds: PosterBounds = MASCOT_POSTER_
     eyeY: poster.top + poster.height * bounds.eye,
     centerX: poster.left + poster.width * bounds.centerX,
   };
+}
+
+/**
+ * Целевая рамка для fitCamera, когда на экране должна быть только голова:
+ * макушка — на верх головы PNG, а «ступни» продолжены вниз в том же масштабе.
+ */
+export function headPosterTarget(poster: Rect) {
+  const top = poster.top + poster.height * HEAD_POSTER.top;
+  const headBottom = poster.top + poster.height * HEAD_POSTER.bottom;
+  const pxPerHeight = (headBottom - top) / (1 - HEAD_POSTER.cutAt);
+  return { top, bottom: top + pxPerHeight, centerX: poster.left + poster.width * HEAD_POSTER.centerX };
+}
+
+/** Высота среза тела (от ступней): mix 0 — тело целиком, 1 — остаётся только голова. */
+export function bodyCut(mix: number, modelHeight: number) {
+  return modelHeight * (-0.05 + (HEAD_POSTER.cutAt + 0.05) * mix);
 }
 
 /** Высота глаз 3D-модели от ступней при росте H — та же доля роста, что на постере. */

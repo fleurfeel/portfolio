@@ -26,7 +26,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { SceneState } from '../stage/math';
 import { bytesFraction } from '../preloader/progress';
 import { lerpFit } from '../stage/math';
-import { type PosterBounds, type Rect, clampPixelRatio, damp, envelope, fitCamera, orbitPosition, posterTarget } from './math';
+import { HEAD_POSTER, type PosterBounds, type Rect, bodyCut, clampPixelRatio, damp, envelope, fitCamera, headPosterTarget, orbitPosition, posterTarget } from './math';
 import { getRenderer } from './renderer';
 
 // Риг и анимации — по прототипу (см. docs/mascot.md); подписей у логотипов нет, орбита медленнее.
@@ -35,6 +35,8 @@ const FOV = 28;
 const ORBIT_SPEED = 0.2; // в прототипе 0.32
 const ARMS_DOWN = 1.2; // модель в T-позе — руки опускаем костями
 const IDLE_AFTER_MS = 6000;
+/** телефон: во сколько раз камера отдалена от головы в начале перехода «тело → голова» */
+const HEAD_ZOOM_OUT = 2.6;
 /** поза «показывает на проекты»: левая рука (справа на экране) почти горизонтально — карточки сбоку */
 const POINT = { upper: 0.45, fore: 0.05, hand: 0.15, yaw: 0.35, body: 0.25, look: 0 };
 /** на телефоне карточки ниже маскота: рука вниз-вправо, голова чуть наклонена к ним */
@@ -85,8 +87,15 @@ export interface MascotSceneOptions {
   onProgress?: (p: { models: number; init: number }) => void;
   /** слой, в который встаёт canvas; по его размеру считается кадр */
   container: HTMLElement;
-  /** рамки PNG-постеров относительно container (без учёта transform): 3D встаёт ровно на их место */
+  /** рамки PNG-постеров относительно sticky-экрана сцены (без учёта transform): 3D встаёт ровно на их место */
   measure: () => { hero: PosterInfo; projects: PosterInfo | null; about: PosterInfo | null };
+  /**
+   * Каждый кадр: где сейчас sticky-экран (px от верха окна; 0, пока сцена закреплена),
+   * рамка PNG-головы манифеста в окне и прогресс перехода «тело → голова».
+   */
+  getDynamic: () => { pinTop: number; head: Rect | null; headMix: number };
+  /** пока хотя бы один из элементов на экране — рендерим, иначе пауза */
+  observe: Element[];
   /** состояние сцены «первый экран → проекты → обо мне» */
   getTransition: () => SceneState;
   /** следить за курсором (только мышь и без prefers-reduced-motion) */
@@ -151,7 +160,7 @@ interface Logo {
   kick: number;
 }
 
-export async function createMascotScene({ modelUrl, modelSizes, onProgress, container, measure, getTransition, trackCursor, reducedMotion, onReady }: MascotSceneOptions) {
+export async function createMascotScene({ modelUrl, modelSizes, onProgress, container, measure, getDynamic, observe, getTransition, trackCursor, reducedMotion, onReady }: MascotSceneOptions) {
   const renderer = getRenderer();
   const canvas = renderer.domElement;
   canvas.style.cssText = 'display:block;width:100%;height:100%;touch-action:pan-y';
@@ -225,12 +234,35 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
   const center = box.getCenter(new Vector3());
   artem.position.set(-center.x, -box.min.y, -center.z);
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  // переход «тело → голова»: всё ниже uCut плавно растворяется (модель — один меш, иначе тело не спрятать)
+  const cutUniforms = { uCut: { value: -1 }, uSoft: { value: 0.05 } };
   artem.traverse((o) => {
     if (!(o instanceof Mesh)) return;
     o.frustumCulled = false;
     const m = o.material;
     m.envMapIntensity = 0.9;
     for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap'] as const) if (m[k]) m[k].anisotropy = maxAniso;
+    m.transparent = true;
+    m.onBeforeCompile = (shader: { uniforms: Record<string, unknown>; vertexShader: string; fragmentShader: string }) => {
+      Object.assign(shader.uniforms, cutUniforms);
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', `#include <common>
+varying float vCutY;`)
+        .replace('#include <skinning_vertex>', `#include <skinning_vertex>
+vCutY = (modelMatrix * vec4(transformed, 1.0)).y;`);
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', `#include <common>
+uniform float uCut;
+uniform float uSoft;
+varying float vCutY;`)
+        .replace(
+          '#include <alphamap_fragment>',
+          `#include <alphamap_fragment>
+diffuseColor.a *= smoothstep(uCut - uSoft, uCut + uSoft, vCutY);
+if (diffuseColor.a < 0.004) discard;`,
+        );
+    };
+    m.customProgramCacheKey = () => 'mascot-body-cut';
   });
   hopper.add(artem);
   const H = size.y;
@@ -272,37 +304,55 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
   });
   const logoHolders = logos.map((l) => l.holder);
 
-  // --- кадры: маскот ровно на месте постеров первого экрана и экрана проектов
-  type Fit = ReturnType<typeof fitCamera>;
-  let fitHero: Fit = { distance: 3, x: 0, y: H / 2 };
-  let fitProjects: Fit | null = null;
-  let fitAbout: Fit | null = null;
+  // --- кадры: маскот ровно на месте постеров (первый экран, проекты, «Обо мне», голова манифеста)
+  let posters = measure();
+  let w = 1;
+  let h = 1;
   let radius = H * 0.6;
   let pose = POINT;
   function layout() {
-    const w = container.clientWidth;
-    const h = container.clientHeight;
+    w = container.clientWidth;
+    h = container.clientHeight;
     if (!w || !h) return;
     renderer.setPixelRatio(clampPixelRatio(window.devicePixelRatio));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    const { hero, projects, about } = measure();
-    fitHero = fitCamera({ width: w, height: h, ...posterTarget(hero.rect, hero.bounds) }, H, FOV);
-    fitProjects = projects ? fitCamera({ width: w, height: h, ...posterTarget(projects.rect, projects.bounds) }, H, FOV) : null;
-    fitAbout = about ? fitCamera({ width: w, height: h, ...posterTarget(about.rect, about.bounds) }, H, FOV) : null;
+    posters = measure();
     radius = H * (w < 1024 ? 0.5 : 0.6);
     pose = w < 1024 ? POINT_MOBILE : POINT;
     placeCamera();
   }
+  // кадр, отдалённый от центра головы в k раз: голова остаётся на месте, но меньше, тело видно целиком
+  const headCenter = { x: 0, y: H * (1 + HEAD_POSTER.cutAt) / 2 };
+  const zoomOutFrom = (f: { distance: number; x: number; y: number }, k: number) => ({
+    distance: f.distance * k,
+    x: headCenter.x + (f.x - headCenter.x) * k,
+    y: headCenter.y + (f.y - headCenter.y) * k,
+  });
+  // постеры сцены едут вместе с sticky-экраном, когда он отпускается (dy — его сдвиг вверх)
+  const fitFor = (p: PosterInfo, dy: number) =>
+    fitCamera({ width: w, height: h, ...posterTarget({ ...p.rect, top: p.rect.top + dy }, p.bounds) }, H, FOV);
 
-  // переходы: маскот плавно переезжает между местами постеров первого экрана, проектов и «Обо мне»
+  // переходы: маскот плавно переезжает между местами постеров, а в конце остаётся одной головой в манифесте
   let transition = getTransition();
   function placeCamera() {
     transition = getTransition();
-    const toProjects = lerpFit(fitHero, fitProjects ?? fitHero, transition.mascotMix);
-    const fit = lerpFit(toProjects, fitAbout ?? toProjects, transition.aboutMix);
+    const { pinTop, head, headMix } = getDynamic();
+    const hero = fitFor(posters.hero, pinTop);
+    const toProjects = lerpFit(hero, posters.projects ? fitFor(posters.projects, pinTop) : hero, transition.mascotMix);
+    const stage = lerpFit(toProjects, posters.about ? fitFor(posters.about, pinTop) : toProjects, transition.aboutMix);
+    let fit = stage;
+    if (head && headMix > 0) {
+      const headFit = fitCamera({ width: w, height: h, ...headPosterTarget(head) }, H, FOV);
+      // телефон: «Обо мне» длиннее экрана и маскот из неё уже уехал вверх — не тащим его через текст,
+      // а показываем целиком прямо в манифесте (камера отдалена от головы) и приближаем к голове
+      const from = w < 1024 ? zoomOutFrom(headFit, HEAD_ZOOM_OUT) : stage;
+      fit = lerpFit(from, headFit, headMix);
+    }
     camera.position.set(fit.x, fit.y, fit.distance);
+    cutUniforms.uCut.value = bodyCut(headMix, H) + hopper.position.y;
+    cutUniforms.uSoft.value = H * 0.05;
     orbit.visible = transition.logos > 0.01;
   }
 
@@ -509,11 +559,14 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
   };
   const sync = () => (inView && !document.hidden ? start() : stop());
 
-  const io = new IntersectionObserver(([entry]) => {
-    inView = !!entry?.isIntersecting;
+  // холст во весь экран и фиксирован — смотрим не на него, а на секции, где маскот бывает
+  const visible = new Set<Element>();
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) e.isIntersecting ? visible.add(e.target) : visible.delete(e.target);
+    inView = visible.size > 0;
     sync();
   });
-  io.observe(container);
+  for (const el of observe) io.observe(el);
   document.addEventListener('visibilitychange', sync);
 
   const ro = new ResizeObserver(() => {
