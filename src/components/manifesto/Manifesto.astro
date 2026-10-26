@@ -1,7 +1,8 @@
 ---
 // Манифест: голова маскота и крупная цитата. Макеты Figma: Mobile 393 (491:312), Laptop 1440 (491:253), Desktop 1920 (491:259).
-// Слова «переворачиваются» и проявляются по мере того, как секция въезжает в экран, —
-// чистый CSS (scroll-driven animations), без JS. Нет поддержки или reduced motion — текст сразу виден.
+// Слова «переворачиваются» волной, когда секция поднялась примерно на треть экрана: проигрыш по времени,
+// не по скроллу, — иначе при прокрутке колесом эффект проскакивает незаметно. Включает и запускает
+// остров Stage.vue (атрибут data-reveal: '' — ждём, 'in' — играем). Без JS и при reduced motion текст виден сразу.
 // Голова — постер: 3D-маскот из сцены перелетает сюда и остаётся одной головой (тело растворяется).
 import { Image } from 'astro:assets';
 import head from '../../assets/manifesto/head.png';
@@ -27,7 +28,7 @@ const words = text.split(' ');
     {
       words.map((word, i) => (
         <>
-          <span class="manifesto__word" style={`--s:${(i / words.length).toFixed(4)}`}>
+          <span class="manifesto__word" style={`--i:${i}`}>
             {word}
           </span>{' '}
         </>
@@ -48,10 +49,6 @@ const words = text.split(' ');
     min-height: 100svh;
     padding: 80px 13px;
     color: var(--color-text);
-    view-timeline-name: --manifesto;
-    /* таймлайн через переменную: иначе минификатор склеивает animation-timeline с шортхендом animation,
-       и браузер отбрасывает всё объявление — анимации нет */
-    --manifesto-timeline: --manifesto;
   }
 
   .manifesto__head {
@@ -129,36 +126,28 @@ const words = text.split(' ');
     }
   }
 
-  /* ---------- переворот слов при скролле ---------- */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .manifesto__head {
-        animation: manifesto-rise linear both;
-        animation-timeline: var(--manifesto-timeline);
-        animation-range: entry 0% entry 35%;
-      }
-
-      /* каждое слово — свой отрезок въезда секции: волна от первого слова к последнему */
-      .manifesto__word {
-        transform-origin: 50% 100%;
-        animation: manifesto-flip linear both;
-        animation-timeline: var(--manifesto-timeline);
-        animation-range: entry calc(15% + var(--s) * 55%) entry calc(30% + var(--s) * 55%);
-      }
-    }
+  /* ---------- переворот слов при появлении (data-reveal ставит Stage.vue) ---------- */
+  /* скрытие мгновенное (секция в этот момент за экраном), анимация — только на появление */
+  .manifesto[data-reveal] .manifesto__word {
+    opacity: 0;
+    transform: translateY(0.35em) rotateX(-90deg);
+    transform-origin: 50% 100%;
   }
 
-  @keyframes manifesto-rise {
-    from {
-      opacity: 0;
-      transform: translateY(24px);
-    }
+  .manifesto[data-reveal='in'] .manifesto__word {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.5s ease,
+      transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i) * 28ms);
   }
 
-  @keyframes manifesto-flip {
-    from {
-      opacity: 0;
-      transform: translateY(0.35em) rotateX(-90deg);
+  @media (prefers-reduced-motion: reduce) {
+    .manifesto[data-reveal] .manifesto__word {
+      opacity: 1;
+      transform: none;
+      transition: none;
     }
   }
 </style>

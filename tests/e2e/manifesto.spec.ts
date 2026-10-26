@@ -9,25 +9,33 @@ async function scrollManifesto(page: import('@playwright/test').Page, f: number)
   }, f);
 }
 
+const lastWordOpacity = (page: import('@playwright/test').Page) =>
+  page.locator('.manifesto__word').last().evaluate((el) => Number(getComputedStyle(el).opacity));
+
 test.describe('манифест', () => {
-  test('слова проявляются по мере въезда секции (проверка на продакшен-сборке)', async ({ page }) => {
+  test('слова переворачиваются, когда секция поднялась на треть экрана, и проигрываются снова', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/', { waitUntil: 'networkidle' });
-    const words = page.locator('.manifesto__word');
+    await page.waitForFunction(() => document.querySelector('[data-manifesto]')?.hasAttribute('data-reveal'));
     await expect(page.locator('section.manifesto')).toContainText('а не просто красивее.');
 
-    await scrollManifesto(page, 0.3);
-    // последнее слово ещё не перевернулось
-    await expect.poll(() => words.last().evaluate((el) => Number(getComputedStyle(el).opacity))).toBeLessThan(0.5);
+    await scrollManifesto(page, 0.15);
+    await expect(page.locator('[data-manifesto]')).toHaveAttribute('data-reveal', '');
+    expect(await lastWordOpacity(page)).toBe(0);
 
-    await scrollManifesto(page, 1);
-    await expect(words.last()).toHaveCSS('opacity', '1');
+    await scrollManifesto(page, 0.6);
+    await expect(page.locator('[data-manifesto]')).toHaveAttribute('data-reveal', 'in');
+    await expect.poll(() => lastWordOpacity(page), { timeout: 5000 }).toBe(1);
+
+    // назад за экран — сброс, чтобы при следующем заходе сыграть снова
+    await scrollManifesto(page, -0.2);
+    await expect(page.locator('[data-manifesto]')).toHaveAttribute('data-reveal', '');
   });
 
   test('prefers-reduced-motion: текст виден сразу', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/', { waitUntil: 'networkidle' });
-    await scrollManifesto(page, 0.3);
+    await scrollManifesto(page, 0.15);
     await expect(page.locator('.manifesto__word').last()).toHaveCSS('opacity', '1');
   });
 });

@@ -161,6 +161,22 @@ onMounted(() => {
     if (tail) tail.style.height = `${Math.max(0, aboutLayer.offsetHeight - pin.clientHeight)}px`;
   };
 
+  // манифест: слова переворачиваются, когда секция поднялась примерно на треть экрана;
+  // ушла вниз за экран — сбрасываем, чтобы при следующем заходе эффект проигрался снова
+  if (manifesto && !reducedMotion) {
+    manifesto.dataset.reveal = manifesto.getBoundingClientRect().top < innerHeight * 0.7 ? 'in' : '';
+    const reveal = new IntersectionObserver(
+      ([e]) => {
+        if (!e) return;
+        if (e.isIntersecting) manifesto.dataset.reveal = 'in';
+        else if (e.boundingClientRect.top > 0) manifesto.dataset.reveal = '';
+      },
+      { rootMargin: '0px 0px -30% 0px' },
+    );
+    reveal.observe(manifesto);
+    cleanups.push(() => reveal.disconnect());
+  }
+
   // рамка PNG-головы манифеста в документе (по offset*, без анимации появления)
   let headDoc = headPoster ? offsetRect(headPoster, document.body) : null;
   const measureHead = () => {
