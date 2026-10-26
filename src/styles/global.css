@@ -26,6 +26,7 @@
   --color-bg: #f2f3f5;
   --color-accent: #4b3bd6;
   --color-secondary: #5c6370;
+  --color-surface: #ffffff;
 
   --font-*: initial;
   --font-sans: 'Jura', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;

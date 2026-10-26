@@ -67,4 +67,50 @@ test.describe('услуги и стоимость', () => {
     await scrollGrid(page, 0.8);
     expect(await firstCardTransform(page)).toBe('none');
   });
+
+  test('кнопка в карточке открывает заявку с выбранной услугой; заявка уходит на /api/lead', async ({ page }) => {
+    let sent: Record<string, string> | null = null;
+    await page.route('**/api/lead', async (route) => {
+      sent = route.request().postDataJSON();
+      await route.fulfill({ json: { ok: true } });
+    });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    const card = page.locator('.services__card').first();
+    // остров формы подключается в простое браузера — ждём, пока кнопка начнёт открывать окно
+    const dialog = page.getByRole('dialog');
+    await expect(async () => {
+      await card.getByRole('button', { name: 'Оставить заявку' }).click();
+      await expect(dialog).toBeVisible({ timeout: 500 });
+    }).toPass();
+    await expect(dialog.getByLabel('Услуга')).toHaveValue('Лендинг');
+
+    // пусто — подсказки у полей, на сервер ничего не уходит
+    await dialog.getByRole('button', { name: 'Отправить' }).click();
+    await expect(dialog.getByText('Напишите, как к вам обращаться')).toBeVisible();
+    expect(sent).toBeNull();
+
+    await dialog.getByLabel('Имя').fill('Анна');
+    await dialog.getByLabel('Как с вами связаться').fill('@anna');
+    await dialog.getByRole('button', { name: 'Отправить' }).click();
+    await expect(dialog.getByText('Заявка отправлена')).toBeVisible();
+    expect(sent).toMatchObject({ service: 'Лендинг', name: 'Анна', contact: '@anna' });
+
+    await dialog.getByRole('button', { name: 'Хорошо' }).click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('сервер не ответил — сообщение об ошибке, данные в форме остаются', async ({ page }) => {
+    await page.route('**/api/lead', (route) => route.fulfill({ status: 502, json: { ok: false } }));
+    await page.goto('/', { waitUntil: 'networkidle' });
+    const dialog = page.getByRole('dialog');
+    await expect(async () => {
+      await page.locator('.services__card').last().getByRole('button', { name: 'Оставить заявку' }).click();
+      await expect(dialog).toBeVisible({ timeout: 500 });
+    }).toPass();
+    await dialog.getByLabel('Имя').fill('Анна');
+    await dialog.getByLabel('Как с вами связаться').fill('+7 900 000-00-00');
+    await dialog.getByRole('button', { name: 'Отправить' }).click();
+    await expect(dialog.getByRole('alert')).toContainText('Не получилось отправить');
+    await expect(dialog.getByLabel('Имя')).toHaveValue('Анна');
+  });
 });

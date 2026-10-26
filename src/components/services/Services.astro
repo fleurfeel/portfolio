@@ -2,10 +2,12 @@
 // «Услуги и стоимость». Вайрфрейм Figma: 291:4969 (четыре карточки 424 × 535 на десктопе 1920), оформление — в стилистике сайта.
 // Ноутбук и десктоп: карточки лежат колодой по центру и при прокрутке «раздаются» по своим местам
 // (CSS scroll-driven animation по общей view-timeline сетки); от 1440 — в один ряд, 1024–1440 — сеткой 2 × 2.
-// Наведение — карточка подсвечивается акцентом и приподнимается.
+// Карточки белые, у края — мягкое фиолетовое свечение (у каждой в своём углу); при наведении оно ярче и карточка приподнимается.
+// Кнопка «Оставить заявку» открывает форму (остров LeadForm.vue), услуга в ней уже выбрана.
 // Телефон: горизонтальная карусель со scroll-snap; карточка у края чуть меньше и бледнее.
 // Без поддержки scroll-driven animations или при reduced motion — карточки сразу на местах.
 import { services } from '../../data/services';
+import LeadForm from './LeadForm.vue';
 ---
 
 <section class="services" id="services" aria-labelledby="services-title">
@@ -24,11 +26,18 @@ import { services } from '../../data/services';
             <span class="services__term-label">Срок</span>
             {service.term}
           </p>
-          <p class="services__price">{service.price}</p>
+          <div class="services__bottom">
+            <p class="services__price">{service.price}</p>
+            <button class="services__cta" type="button" data-lead={service.title}>
+              Оставить заявку
+            </button>
+          </div>
         </li>
       ))
     }
   </ul>
+
+  <LeadForm client:idle services={services.map((s) => s.title)} />
 </section>
 
 <style>
@@ -57,20 +66,52 @@ import { services } from '../../data/services';
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
     border-radius: 30px;
-    background: var(--color-text);
-    color: var(--color-bg);
+    background: var(--color-surface);
+    box-shadow: 0 24px 48px -24px color-mix(in srgb, var(--color-accent) 25%, transparent);
+    color: var(--color-text);
     transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  /* подсветка при наведении — слой акцента под текстом (меняется только прозрачность) */
+  /* фиолетовое свечение у края карточки; угол — свой у каждой (--gx, --gy) */
   .services__card::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--color-accent);
-    opacity: 0;
-    transition: opacity 0.4s ease;
+    background:
+      radial-gradient(
+        circle at var(--gx) var(--gy),
+        color-mix(in srgb, var(--color-accent) 70%, transparent) 0%,
+        color-mix(in srgb, var(--color-accent) 25%, transparent) 30%,
+        transparent 60%
+      );
+    opacity: 0.55;
+    transform: scale(1);
+    transform-origin: var(--gx) var(--gy);
+    transition:
+      opacity 0.5s ease,
+      transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .services__card:nth-child(4n + 1) {
+    --gx: 115%;
+    --gy: 105%;
+  }
+
+  .services__card:nth-child(4n + 2) {
+    --gx: 110%;
+    --gy: 0%;
+  }
+
+  .services__card:nth-child(4n + 3) {
+    --gx: -10%;
+    --gy: 100%;
+  }
+
+  .services__card:nth-child(4n + 4) {
+    --gx: 115%;
+    --gy: 55%;
   }
 
   .services__card > :not(.services__num) {
@@ -81,10 +122,10 @@ import { services } from '../../data/services';
     position: absolute;
     top: var(--pad);
     right: var(--pad);
+    color: var(--color-secondary);
     font-size: var(--term-fs);
     font-weight: 600;
     line-height: 1.2;
-    opacity: 0.5;
   }
 
   .services__name {
@@ -97,9 +138,9 @@ import { services } from '../../data/services';
 
   .services__text {
     margin-top: var(--text-gap);
+    color: var(--color-secondary);
     font-size: var(--text-fs);
     line-height: 1.3;
-    opacity: 0.8;
   }
 
   .services__term {
@@ -109,7 +150,7 @@ import { services } from '../../data/services';
     gap: 8px;
     margin-top: var(--text-gap);
     padding: 4px 12px 4px 4px;
-    border: 1px solid color-mix(in srgb, var(--color-bg) 35%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
     border-radius: 60px;
     font-size: var(--term-fs);
     font-weight: 600;
@@ -119,17 +160,45 @@ import { services } from '../../data/services';
   .services__term-label {
     padding: 2px 10px;
     border-radius: 60px;
-    background: var(--color-bg);
-    color: var(--color-text);
+    background: var(--color-accent);
+    color: var(--color-surface);
+  }
+
+  .services__bottom {
+    display: flex;
+    flex-direction: column;
+    gap: var(--text-gap);
+    margin-top: auto;
+    padding-top: var(--text-gap);
   }
 
   .services__price {
-    margin-top: auto;
-    padding-top: var(--text-gap);
     font-size: var(--price-fs);
     font-weight: 600;
     line-height: 1.1;
     letter-spacing: -0.04em;
+  }
+
+  .services__cta {
+    padding: 16px 24px;
+    border-radius: 42px;
+    background: var(--color-text);
+    color: var(--color-surface);
+    font: inherit;
+    font-size: var(--cta-fs);
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .services__cta:hover {
+    opacity: 0.85;
+  }
+
+  .services__cta:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
   }
 
   @media (hover: hover) {
@@ -139,6 +208,7 @@ import { services } from '../../data/services';
 
     .services__card:hover::before {
       opacity: 1;
+      transform: scale(1.25);
     }
   }
 
@@ -151,6 +221,7 @@ import { services } from '../../data/services';
       --text-gap: 16px;
       --term-fs: 14px;
       --price-fs: 28px;
+      --cta-fs: 16px;
 
       padding: 80px 0;
     }
@@ -229,6 +300,7 @@ import { services } from '../../data/services';
       --text-gap: 20px;
       --term-fs: 16px;
       --price-fs: 36px;
+      --cta-fs: 16px;
 
       padding: calc(var(--pad-top) * 0.5) var(--pad-x) var(--pad-top);
     }
@@ -282,7 +354,7 @@ import { services } from '../../data/services';
       --dy: 0px;
       --deal-end: entry 90%;
 
-      min-height: 0;
+      min-height: auto; /* не меньше содержимого, даже если пропорция тесна */
       aspect-ratio: 424 / 535;
     }
   }
