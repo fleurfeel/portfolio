@@ -77,6 +77,9 @@ onMounted(() => {
   // «Как я работаю»: голова из манифеста перетекает сюда
   const how = document.querySelector<HTMLElement>('[data-how]');
   const howHeadPoster = how?.querySelector<HTMLElement>('[data-mascot-poster="how-head"]') ?? null;
+  // футер: голова выглядывает снизу страницы
+  const footerHeadPoster = document.querySelector<HTMLElement>('[data-mascot-poster="footer-head"]');
+  const footer = footerHeadPoster?.closest('footer') ?? null;
 
   const cards = [...stage.querySelectorAll<HTMLElement>('[data-card]')];
   const infos = [...stage.querySelectorAll<HTMLElement>('[data-info]')];
@@ -245,6 +248,13 @@ onMounted(() => {
       flight = flightProgress(r.top - innerHeight * 0.45, innerHeight);
       if (flight > 0) head = mixRect(head, { left: r.left, top: r.top, width: r.width, height: r.height }, flight);
     }
+    if (head && footerHeadPoster) {
+      // «Как я работаю» и футер разделяют «Услуги» и «Вопросы» (больше экрана): когда футер подходит к экрану,
+      // голова «Как я работаю» уже давно за верхним краем — переносим её в футер скачком, этого не видно.
+      // Рамку берём живую: постер выезжает снизу анимацией по скроллу и приподнимается при наведении
+      const f = footerHeadPoster.getBoundingClientRect();
+      if (f.width && f.top < innerHeight * 1.1) head = { left: f.left, top: f.top, width: f.width, height: f.height };
+    }
     return { head, headMix, flight };
   };
 
@@ -354,12 +364,13 @@ onMounted(() => {
         measure,
         getTransition: () => transition,
         getDynamic: () => ({ pinTop: pin.getBoundingClientRect().top, ...headNow() }),
-        observe: [pin, manifesto, how].filter((el): el is HTMLElement => !!el),
+        observe: [pin, manifesto, how, footer].filter((el): el is HTMLElement => !!el),
         reducedMotion,
         trackCursor: shouldTrackCursor({ canHover, reducedMotion }),
         onReady: () => {
           layer.dataset.ready = '';
           stage.dataset.mascot = 'ready'; // постеры уходят
+          document.documentElement.dataset.mascot = 'ready'; // и постер в футере (он вне сцены)
           clearTimeout(timeout);
           preloader.finish();
         },

@@ -1,7 +1,9 @@
 ---
-// Футер: светлая (белая) полоса с тонкой линией сверху, снизу по центру выглядывает голова маскота. Слева копирайт, справа документы по 152-ФЗ.
-// Голова выезжает снизу, пока футер появляется на экране (CSS scroll-driven animation; без поддержки
-// или при reduced motion — сразу на месте), и чуть приподнимается при наведении.
+// Футер на фоне сайта (прозрачный — под ним фиксированный 3D-холст), снизу по центру выглядывает голова маскота.
+// Слева копирайт, справа документы по 152-ФЗ.
+// Голова — постер: на главной сюда перелетает 3D-голова (Stage.vue, data-mascot-poster="footer-head"), постер прячется;
+// на остальных страницах и без 3D виден сам постер. Голова выезжает снизу, пока футер появляется на экране
+// (CSS scroll-driven animation; без поддержки или при reduced motion — сразу на месте), и чуть приподнимается при наведении.
 import { Image } from 'astro:assets';
 import head from '../../assets/manifesto/head.png';
 
@@ -20,7 +22,15 @@ const docs = [
   </nav>
 
   <div class="footer__head" aria-hidden="true">
-    <Image src={head} widths={[240, 360, 480, 720]} sizes="(min-width: 1024px) 360px, 240px" alt="" loading="lazy" decoding="async" />
+    <Image
+      src={head}
+      widths={[240, 360, 480, 720]}
+      sizes="(min-width: 1024px) 360px, 240px"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      data-mascot-poster="footer-head"
+    />
   </div>
 </footer>
 
@@ -30,8 +40,6 @@ const docs = [
     z-index: 2; /* над фиксированным 3D-холстом */
     display: grid;
     overflow: hidden;
-    border-top: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
-    background: var(--color-surface);
     color: var(--color-secondary);
     font-size: 14px;
     line-height: 1.3;
@@ -70,7 +78,14 @@ const docs = [
     display: block;
     width: 100%;
     height: auto;
-    transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition:
+      translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1),
+      opacity 0.6s ease;
+  }
+
+  /* 3D готов (главная) — на месте постера 3D-голова */
+  :global(html[data-mascot='ready']) .footer__head :global(img) {
+    opacity: 0;
   }
 
   @media (hover: hover) {
