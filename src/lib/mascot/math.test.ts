@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AVATAR_POSTER_BOUNDS,
+  BODY_CUT,
   HEAD_POSTER,
   headPosterTarget,
   bodyCut,
@@ -105,8 +106,14 @@ describe('headPosterTarget', () => {
 describe('bodyCut', () => {
   it('0 — тело целиком (срез ниже ступней), 1 — остаётся голова', () => {
     expect(bodyCut(0, 1)).toBeLessThan(0);
-    expect(bodyCut(1, 1)).toBeCloseTo(HEAD_POSTER.cutAt, 6);
+    expect(bodyCut(1, 1)).toBeCloseTo(BODY_CUT.at, 6);
     expect(bodyCut(0.5, 1)).toBeGreaterThan(bodyCut(0.25, 1));
+  });
+
+  it('срез у подбородка: выше низа кудрей на PNG (иначе видны шея и ворот) и ниже глаз', () => {
+    expect(BODY_CUT.at).toBeGreaterThan(HEAD_POSTER.cutAt);
+    expect(BODY_CUT.at).toBeLessThan(eyeHeight(1));
+    expect(BODY_CUT.soft).toBeLessThan(0.05);
   });
 });
 

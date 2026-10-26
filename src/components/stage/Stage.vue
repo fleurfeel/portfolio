@@ -182,10 +182,8 @@ onMounted(() => {
 
   // рамка PNG-головы манифеста в документе (по offset*, без анимации появления)
   let headDoc = headPoster ? offsetRect(headPoster, document.body) : null;
-  let howHeadDoc = howHeadPoster ? offsetRect(howHeadPoster, document.body) : null;
   const measureHead = () => {
     headDoc = headPoster ? offsetRect(headPoster, document.body) : null;
-    howHeadDoc = howHeadPoster ? offsetRect(howHeadPoster, document.body) : null;
   };
   const mixRect = (a: { left: number; top: number; width: number; height: number }, b: typeof a, m: number) => ({
     left: a.left + (b.left - a.left) * m,
@@ -253,11 +251,12 @@ onMounted(() => {
           const pinTop = pin.getBoundingClientRect().top;
           let head = headDoc ? { ...headDoc, top: headDoc.top - scrollY } : null;
           const headMix = manifesto ? headProgress(manifesto.getBoundingClientRect().top, innerHeight) : 0;
-          if (head && howHeadDoc) {
-            // голова манифеста → голова «Как я работаю»: доходит, когда та поднялась примерно на 60% экрана
-            const howTop = howHeadDoc.top - scrollY;
-            const m = headProgress(howTop - innerHeight * 0.45, innerHeight);
-            if (m > 0) head = mixRect(head, { ...howHeadDoc, top: howTop }, m);
+          if (head && howHeadPoster) {
+            // голова манифеста → голова «Как я работаю»: доходит, когда та поднялась примерно на 60% экрана.
+            // Рамку берём живую: на ноутбуке и десктопе «Как я работаю» — закреплённый (sticky) экран
+            const r = howHeadPoster.getBoundingClientRect();
+            const m = headProgress(r.top - innerHeight * 0.45, innerHeight);
+            if (m > 0) head = mixRect(head, { left: r.left, top: r.top, width: r.width, height: r.height }, m);
           }
           return { pinTop, head, headMix };
         },

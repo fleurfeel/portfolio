@@ -26,7 +26,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { SceneState } from '../stage/math';
 import { bytesFraction } from '../preloader/progress';
 import { lerpFit } from '../stage/math';
-import { HEAD_POSTER, type PosterBounds, type Rect, bodyCut, clampPixelRatio, damp, envelope, fitCamera, headPosterTarget, orbitPosition, posterTarget } from './math';
+import { BODY_CUT, HEAD_POSTER, type PosterBounds, type Rect, bodyCut, clampPixelRatio, damp, envelope, fitCamera, headPosterTarget, orbitPosition, posterTarget } from './math';
 import { getRenderer } from './renderer';
 
 // Риг и анимации — по прототипу (см. docs/mascot.md); подписей у логотипов нет, орбита медленнее.
@@ -208,10 +208,8 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
   grad.addColorStop(1, 'rgba(60,40,25,0)');
   g.fillStyle = grad;
   g.fillRect(0, 0, 128, 128);
-  const ground = new Mesh(
-    new PlaneGeometry(0.75, 0.42),
-    new MeshBasicMaterial({ map: new CanvasTexture(blob), transparent: true, depthWrite: false }),
-  );
+  const groundMaterial = new MeshBasicMaterial({ map: new CanvasTexture(blob), transparent: true, depthWrite: false });
+  const ground = new Mesh(new PlaneGeometry(0.75, 0.42), groundMaterial);
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
@@ -352,7 +350,10 @@ if (diffuseColor.a < 0.004) discard;`,
     }
     camera.position.set(fit.x, fit.y, fit.distance);
     cutUniforms.uCut.value = bodyCut(headMix, H) + hopper.position.y;
-    cutUniforms.uSoft.value = H * 0.05;
+    cutUniforms.uSoft.value = H * BODY_CUT.soft;
+    // в режиме «только голова» тень-блоб под ногами не нужна
+    groundMaterial.opacity = 1 - headMix;
+    ground.visible = headMix < 0.99;
     orbit.visible = transition.logos > 0.01;
   }
 

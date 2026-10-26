@@ -1,15 +1,19 @@
 ---
 // «Как я работаю». Макеты Figma: Laptop 1440 (492:362), Desktop 1920 (492:444); мобильного макета нет.
-// Ноутбук и десктоп: две колонки, шаги с одним номером — в одном ряду. При скролле ряд в центре экрана
-// резкий, а выше и ниже уходят в туман (CSS scroll-driven animations), скролл мягко доводит ряд до центра.
+// Ноутбук и десктоп: закреплённый экран — заголовок, шапки колонок и голова стоят по центру, а скролл
+// на месте листает пары шагов: текущая резкая, соседние в тумане (CSS scroll-driven animations, без JS),
+// прокрутка останавливается на каждом шаге. Без поддержки или при reduced motion — обычные две колонки.
 // Телефон: вместо двух колонок — переключатель «для заказчика / для работодателя» на радиокнопках, без JS.
 // Голова — постер: 3D-голова из манифеста перетекает сюда.
 import { Image } from 'astro:assets';
 import head from '../../assets/manifesto/head.png';
 import { tracks } from '../../data/how';
+
+const n = tracks[0]!.steps.length;
 ---
 
-<section class="how" id="how" aria-labelledby="how-title" data-how>
+<section class="how" id="how" aria-labelledby="how-title" data-how style={`--n:${n}`}>
+  <div class="how__pin">
   <h2 id="how-title" class="how__title">Как я работаю</h2>
 
   <div class="how__body">
@@ -45,18 +49,24 @@ import { tracks } from '../../data/how';
             <span class="how__tag">{track.tag}</span>
             <h3 class="how__track-title">{track.title}</h3>
           </div>
-          <ol class="how__steps">
-            {track.steps.map((step, i) => (
-              <li class="how__step" style={`--row:${i + 2}`}>
-                <h4 class="how__step-title">{step.title}</h4>
-                <p class="how__step-text">{step.text}</p>
-              </li>
-            ))}
-          </ol>
+          <div class="how__window">
+            <ol class="how__steps">
+              {track.steps.map((step, i) => (
+                <li class="how__step" style={`--row:${i + 2}`}>
+                  <h4 class="how__step-title">{step.title}</h4>
+                  <p class="how__step-text">{step.text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       ))
     }
   </div>
+  </div>
+
+  <!-- закреплённый режим: точки, где прокрутка останавливается на каждом шаге -->
+  {Array.from({ length: n }, (_, i) => <div class="how__snap" style={`--i:${i}`} />)}
 </section>
 
 <style>
@@ -238,7 +248,8 @@ import { tracks } from '../../data/how';
       font-size: var(--title-fs);
     }
 
-    .how__switch {
+    .how__switch,
+    .how__snap {
       display: none;
     }
 
@@ -251,6 +262,7 @@ import { tracks } from '../../data/how';
 
     /* колонки «растворяются» в сетку: заголовки — в 1-й ряд, шаги — по своим рядам */
     .how__track,
+    .how__window,
     .how__steps {
       display: contents;
     }
@@ -348,6 +360,113 @@ import { tracks } from '../../data/how';
         animation-timeline: var(--how-timeline);
         animation-range: cover 0% cover 100%;
       }
+    }
+  }
+
+  /* ---------- закреплённый экран: шаги листаются на месте (ноутбук и десктоп) ---------- */
+  @supports (animation-timeline: view()) {
+    @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+      .how {
+        /* таймлайн через переменную: иначе минификатор склеит его с шортхендом animation */
+        --how-tl: --how;
+        --pitch: calc(205 * var(--k));
+        --window: min(calc(var(--pitch) * 2.1), calc(100svh - 360 * var(--k)));
+        --pin-title-gap: calc(56 * var(--k));
+
+        height: calc(100svh * (1 + (var(--n) - 1) * 0.6));
+        padding: 0;
+        view-timeline-name: --how;
+      }
+
+      .how__pin {
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100svh;
+        padding-inline: var(--pad-x);
+      }
+
+      .how__body {
+        grid-template-rows: auto var(--window);
+        row-gap: var(--first-gap);
+        margin-top: var(--pin-title-gap);
+      }
+
+      .how__track-head {
+        margin-bottom: 0;
+        animation: none;
+      }
+
+      /* окно колонки: видна текущая пара шагов и края соседних, края тают в фон */
+      .how__window {
+        display: block;
+        grid-row: 2;
+        grid-column: calc(1 + var(--side) * 2);
+        height: var(--window);
+        overflow: clip;
+        mask-image: linear-gradient(to bottom, transparent, black 22%, black 78%, transparent);
+      }
+
+      .how__steps {
+        position: relative;
+        display: block;
+        height: calc(var(--pitch) * var(--n));
+        transform: translateY(calc(var(--window) / 2 - var(--pitch) / 2));
+        animation: how-scroll linear both;
+        animation-timeline: var(--how-tl);
+        animation-range: contain 0% contain 100%;
+      }
+
+      .how__step {
+        position: absolute;
+        top: calc((var(--row) - 2) * var(--pitch));
+        right: 0;
+        left: 0;
+        justify-content: center;
+        height: var(--pitch);
+        scroll-snap-align: none;
+        animation: how-step-focus linear both;
+        animation-timeline: var(--how-tl);
+        animation-range: contain calc((var(--row) - 3) * 100% / (var(--n) - 1)) contain calc((var(--row) - 1) * 100% / (var(--n) - 1));
+      }
+
+      .how__snap {
+        position: absolute;
+        top: calc(var(--i) * 60svh);
+        display: block;
+        width: 1px;
+        height: 1px;
+        scroll-snap-align: start;
+      }
+    }
+
+    @media (min-width: 1440px) and (prefers-reduced-motion: no-preference) {
+      .how {
+        --pitch: calc(205px + 25 * (100vw - 1440px) / 480);
+        --window: min(calc(var(--pitch) * 2.1), calc(100svh - 360px));
+        --pin-title-gap: 56px;
+      }
+    }
+  }
+
+  @keyframes how-scroll {
+    to {
+      transform: translateY(calc(var(--window) / 2 - var(--pitch) / 2 - var(--pitch) * (var(--n) - 1)));
+    }
+  }
+
+  @keyframes how-step-focus {
+    0%,
+    100% {
+      opacity: 0.15;
+      filter: blur(6px);
+    }
+
+    50% {
+      opacity: 1;
+      filter: blur(0);
     }
   }
 

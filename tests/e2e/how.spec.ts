@@ -15,7 +15,7 @@ test.describe('как я работаю', () => {
     await expect(how.getByText('Бриф', { exact: true })).toBeHidden();
   });
 
-  test('десктоп: обе ветки рядом, переключателя нет; ряд вдали от центра приглушён', async ({ page }, testInfo) => {
+  test('десктоп: обе ветки рядом, переключателя нет; шаги листаются на закреплённом экране', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'две колонки — на ноутбуке и десктопе');
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/', { waitUntil: 'networkidle' });
@@ -24,15 +24,15 @@ test.describe('как я работаю', () => {
     await expect(how.getByText('Бриф', { exact: true })).toBeVisible();
     await expect(how.getByText('Погружение в продукт')).toBeVisible();
 
-    // первый ряд в центре экрана — резкий, последний (ниже экрана) — приглушён
+    // закреплённый экран: прокрутка на 2 шага вперёд — резкий 3-й ряд, первый приглушён, экран стоит на месте
     await page.evaluate(() => {
       document.documentElement.style.scrollSnapType = 'none';
-      const step = document.querySelector('.how__step')!;
-      const r = step.getBoundingClientRect();
-      scrollTo(0, scrollY + r.top + r.height / 2 - innerHeight / 2);
+      const top = document.querySelector('.how')!.getBoundingClientRect().top + scrollY;
+      scrollTo(0, top + innerHeight * 0.6 * 2);
     });
     const opacity = (i: number) => how.locator('.how__step').nth(i).evaluate((el) => Number(getComputedStyle(el).opacity));
-    await expect.poll(() => opacity(0)).toBeGreaterThan(0.9);
-    await expect.poll(() => opacity(4)).toBeLessThan(0.5);
+    await expect.poll(() => opacity(2)).toBeGreaterThan(0.9);
+    await expect.poll(() => opacity(0)).toBeLessThan(0.5);
+    expect(await page.locator('.how__pin').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(0);
   });
 });

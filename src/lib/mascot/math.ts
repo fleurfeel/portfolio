@@ -52,9 +52,15 @@ export function headPosterTarget(poster: Rect) {
   return { top, bottom: top + pxPerHeight, centerX: poster.left + poster.width * HEAD_POSTER.centerX };
 }
 
+/**
+ * Срез тела в режиме «только голова» (доли роста от ступней): у подбородка — ниже глаз,
+ * но выше шеи и ворота футболки; край узкий, чтобы граница была аккуратной.
+ */
+export const BODY_CUT = { at: 0.395, soft: 0.012 } as const;
+
 /** Высота среза тела (от ступней): mix 0 — тело целиком, 1 — остаётся только голова. */
 export function bodyCut(mix: number, modelHeight: number) {
-  return modelHeight * (-0.05 + (HEAD_POSTER.cutAt + 0.05) * mix);
+  return modelHeight * (-0.05 + (BODY_CUT.at + 0.05) * mix);
 }
 
 /** Высота глаз 3D-модели от ступней при росте H — та же доля роста, что на постере. */
