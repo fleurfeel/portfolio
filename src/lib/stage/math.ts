@@ -229,6 +229,17 @@ export function headProgress(manifestoTop: number, viewport: number) {
   return smoothstep(0, 0.85, (viewport - manifestoTop) / viewport);
 }
 
+/**
+ * Доводка прокрутки в закреплённом «Как я работаю»: offset — сколько px прокручено от начала блока.
+ * Возвращает offset ближайшего шага или null, если уже на шаге (±2 px) или прокрутка вне блока.
+ */
+export function snapToStep(offset: number, stepPx: number, count: number): number | null {
+  const last = stepPx * Math.max(0, count - 1);
+  if (offset < -stepPx * 0.4 || offset > last + stepPx * 0.4) return null;
+  const target = clamp(Math.round(offset / stepPx), 0, Math.max(0, count - 1)) * stepPx;
+  return Math.abs(target - offset) <= 2 ? null : target;
+}
+
 export function formatCounter(index: number, count: number) {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(index + 1)}/${pad(count)}`;

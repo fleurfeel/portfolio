@@ -9,7 +9,7 @@ import { shouldTrackCursor } from '../../lib/mascot/math';
 import { hasHardwareWebGL } from '../../lib/mascot/webgl-support';
 import { offsetRect, posterBounds, visiblePoster } from '../../lib/stage/dom';
 import { approach, overallProgress, percentLabel } from '../../lib/preloader/progress';
-import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, headProgress, infoVisibility, sceneState, stageProgress } from '../../lib/stage/math';
+import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, headProgress, infoVisibility, sceneState, snapToStep, stageProgress } from '../../lib/stage/math';
 
 const props = defineProps<{ modelSizes: Record<string, number> }>();
 
@@ -178,6 +178,39 @@ onMounted(() => {
     );
     reveal.observe(manifesto);
     cleanups.push(() => reveal.disconnect());
+  }
+
+  // «Как я работаю» на ноутбуке и десктопе — закреплённый экран, шаг = 60% экрана.
+  // Когда прокрутка остановилась внутри блока, плавно доводим её ровно до ближайшего шага.
+  const howPin = how?.querySelector<HTMLElement>('.how__pin') ?? null;
+  const howSteps = how ? how.querySelectorAll('.how__track--client .how__step').length : 0;
+  let snapping = false;
+  const snapHow = () => {
+    if (!how || !howPin || snapping || getComputedStyle(howPin).position !== 'sticky') return;
+    const stepPx = howPin.clientHeight * 0.6;
+    const offset = -how.getBoundingClientRect().top;
+    const target = snapToStep(offset, stepPx, howSteps);
+    if (target === null) return;
+    snapping = true;
+    scrollTo({ top: scrollY + (target - offset), behavior: reducedMotion ? 'auto' : 'smooth' });
+    setTimeout(() => (snapping = false), 600);
+  };
+  let snapTimer = 0;
+  const onScrollEnd = () => snapHow();
+  // scrollend есть не везде — запасной вариант: пауза в прокрутке 160 мс
+  const onScrollIdle = () => {
+    clearTimeout(snapTimer);
+    snapTimer = window.setTimeout(snapHow, 160);
+  };
+  const hasScrollEnd = 'onscrollend' in window;
+  if (how) {
+    if (hasScrollEnd) addEventListener('scrollend', onScrollEnd);
+    else addEventListener('scroll', onScrollIdle, { passive: true });
+    cleanups.push(() => {
+      removeEventListener('scrollend', onScrollEnd);
+      removeEventListener('scroll', onScrollIdle);
+      clearTimeout(snapTimer);
+    });
   }
 
   // рамка PNG-головы манифеста в документе (по offset*, без анимации появления)

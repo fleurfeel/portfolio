@@ -13,6 +13,7 @@ import {
   sceneState,
   infoVisibility,
   headProgress,
+  snapToStep,
 } from './math';
 
 describe('stageProgress', () => {
@@ -193,6 +194,33 @@ describe('headProgress', () => {
   it('плавно и только вперёд', () => {
     const v = [0.9, 0.7, 0.5, 0.3].map((f) => headProgress(vh * f, vh));
     for (let i = 1; i < v.length; i++) expect(v[i]).toBeGreaterThan(v[i - 1]!);
+  });
+});
+
+describe('snapToStep', () => {
+  const step = 500;
+  const n = 5;
+
+  it('ближайший шаг: недокрутил или перекрутил — всё равно на шаг', () => {
+    expect(snapToStep(480, step, n)).toBe(500);
+    expect(snapToStep(740, step, n)).toBe(500);
+    expect(snapToStep(760, step, n)).toBe(1000);
+    expect(snapToStep(10, step, n)).toBe(0);
+  });
+
+  it('уже на шаге — ничего не делаем', () => {
+    expect(snapToStep(1000, step, n)).toBeNull();
+    expect(snapToStep(1001, step, n)).toBeNull();
+  });
+
+  it('вне закреплённого экрана — не трогаем прокрутку', () => {
+    expect(snapToStep(-300, step, n)).toBeNull();
+    expect(snapToStep(step * (n - 1) + 300, step, n)).toBeNull();
+  });
+
+  it('у краёв доводит к первому и последнему шагу', () => {
+    expect(snapToStep(-100, step, n)).toBe(0);
+    expect(snapToStep(step * (n - 1) + 100, step, n)).toBe(step * (n - 1));
   });
 });
 

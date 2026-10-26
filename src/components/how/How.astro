@@ -1,8 +1,9 @@
 ---
 // «Как я работаю». Макеты Figma: Laptop 1440 (492:362), Desktop 1920 (492:444); мобильного макета нет.
 // Ноутбук и десктоп: закреплённый экран — заголовок, шапки колонок и голова стоят по центру, а скролл
-// на месте листает пары шагов: текущая резкая, соседние в тумане (CSS scroll-driven animations, без JS),
-// прокрутка останавливается на каждом шаге. Без поддержки или при reduced motion — обычные две колонки.
+// на месте листает пары шагов: текущая резкая, соседние в тумане (CSS scroll-driven animations);
+// после остановки прокрутки Stage.vue доводит её ровно до ближайшего шага. Голова — между колонками,
+// на уровне текущего шага. Без поддержки или при reduced motion — обычные две колонки.
 // Телефон: вместо двух колонок — переключатель «для заказчика / для работодателя» на радиокнопках, без JS.
 // Голова — постер: 3D-голова из манифеста перетекает сюда.
 import { Image } from 'astro:assets';
@@ -65,8 +66,6 @@ const n = tracks[0]!.steps.length;
   </div>
   </div>
 
-  <!-- закреплённый режим: точки, где прокрутка останавливается на каждом шаге -->
-  {Array.from({ length: n }, (_, i) => <div class="how__snap" style={`--i:${i}`} />)}
 </section>
 
 <style>
@@ -248,8 +247,7 @@ const n = tracks[0]!.steps.length;
       font-size: var(--title-fs);
     }
 
-    .how__switch,
-    .how__snap {
+    .how__switch {
       display: none;
     }
 
@@ -370,7 +368,8 @@ const n = tracks[0]!.steps.length;
         /* таймлайн через переменную: иначе минификатор склеит его с шортхендом animation */
         --how-tl: --how;
         --pitch: calc(205 * var(--k));
-        --window: min(calc(var(--pitch) * 2.1), calc(100svh - 360 * var(--k)));
+        --window: min(calc(var(--pitch) * 1.5), calc(100svh - 300 * var(--k)));
+        --pin-first-gap: calc(12 * var(--k));
         --pin-title-gap: calc(56 * var(--k));
 
         height: calc(100svh * (1 + (var(--n) - 1) * 0.6));
@@ -390,8 +389,15 @@ const n = tracks[0]!.steps.length;
 
       .how__body {
         grid-template-rows: auto var(--window);
-        row-gap: var(--first-gap);
+        row-gap: var(--pin-first-gap);
         margin-top: var(--pin-title-gap);
+      }
+
+      /* голова — между колонками, на уровне текущего шага */
+      .how__head {
+        grid-row: 2;
+        align-self: center;
+        margin-block: 0;
       }
 
       .how__track-head {
@@ -432,21 +438,14 @@ const n = tracks[0]!.steps.length;
         animation-range: contain calc((var(--row) - 3) * 100% / (var(--n) - 1)) contain calc((var(--row) - 1) * 100% / (var(--n) - 1));
       }
 
-      .how__snap {
-        position: absolute;
-        top: calc(var(--i) * 60svh);
-        display: block;
-        width: 1px;
-        height: 1px;
-        scroll-snap-align: start;
-      }
     }
 
     @media (min-width: 1440px) and (prefers-reduced-motion: no-preference) {
       .how {
         --pitch: calc(205px + 25 * (100vw - 1440px) / 480);
-        --window: min(calc(var(--pitch) * 2.1), calc(100svh - 360px));
+        --window: min(calc(var(--pitch) * 1.5), calc(100svh - 300px));
         --pin-title-gap: 56px;
+        --pin-first-gap: 12px;
       }
     }
   }
