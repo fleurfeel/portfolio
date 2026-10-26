@@ -1,0 +1,322 @@
+---
+// «Частые вопросы». Макета нет — в стилистике блока «Услуги»: белые карточки, фиолетовое свечение у открытого вопроса.
+// Аккордеон на <details name="faq"> — без JS, открыт один вопрос за раз. Плюс превращается в крестик (поворот),
+// ответ проявляется (прозрачность и сдвиг). Кнопка «Задать вопрос» открывает форму заявки (остров LeadForm.vue
+// в «Услугах» слушает все кнопки с data-lead).
+// Ноутбук и десктоп: слева заголовок и кнопка (закреплены при прокрутке), справа список; телефон — одной колонкой.
+import { faq } from '../../data/faq';
+---
+
+<section class="faq" id="faq" aria-labelledby="faq-title">
+  <div class="faq__side">
+    <h2 id="faq-title" class="faq__title">Частые вопросы</h2>
+    <p class="faq__lead">Не нашли ответа — спросите напрямую, отвечу лично.</p>
+    <button class="faq__cta" type="button" data-lead="">Задать вопрос</button>
+  </div>
+
+  <div class="faq__list">
+    {
+      faq.map((item, i) => (
+        <details class="faq__item" name="faq" open={i === 0}>
+          <summary class="faq__question">
+            <span class="faq__num" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span class="faq__q">{item.q}</span>
+            <span class="faq__icon" aria-hidden="true" />
+          </summary>
+          <p class="faq__answer">{item.a}</p>
+        </details>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .faq {
+    position: relative;
+    z-index: 2; /* над фиксированным 3D-холстом */
+    color: var(--color-text);
+  }
+
+  .faq__title {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+
+  .faq__lead {
+    color: var(--color-secondary);
+    font-size: var(--text-fs);
+    line-height: 1.3;
+  }
+
+  .faq__cta {
+    align-self: flex-start;
+    padding: 16px 32px;
+    border-radius: 42px;
+    background: var(--color-accent);
+    color: var(--color-surface);
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .faq__cta:hover {
+    opacity: 0.88;
+  }
+
+  .faq__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .faq__item {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
+    border-radius: 24px;
+    background: var(--color-surface);
+  }
+
+  /* фиолетовое свечение у открытого вопроса — как у карточек услуг */
+  .faq__item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 105% 0%,
+      color-mix(in srgb, var(--color-accent) 45%, transparent),
+      transparent 55%
+    );
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+
+  .faq__item[open]::before {
+    opacity: 1;
+  }
+
+  .faq__question {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: var(--pad);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__question::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__question:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+    border-radius: 24px;
+  }
+
+  .faq__num {
+    color: var(--color-secondary);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .faq__q {
+    font-size: var(--q-fs);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+  }
+
+  /* плюс → крестик: две полоски, при открытии кнопка поворачивается на 45° */
+  .faq__icon {
+    position: relative;
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-text);
+    transition:
+      transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1),
+      opacity 0.2s ease;
+  }
+
+  .faq__icon::before,
+  .faq__icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 2px;
+    margin: -1px 0 0 -7px;
+    border-radius: 2px;
+    background: var(--color-surface);
+  }
+
+  .faq__icon::after {
+    transform: rotate(90deg);
+  }
+
+  .faq__item[open] .faq__icon {
+    transform: rotate(45deg);
+  }
+
+  .faq__question:hover .faq__icon {
+    opacity: 0.85;
+  }
+
+  .faq__answer {
+    position: relative;
+    max-width: 62ch;
+    padding: 0 var(--pad) var(--pad) calc(var(--pad) + 16px + 2ch);
+    color: var(--color-secondary);
+    font-size: var(--text-fs);
+    line-height: 1.4;
+  }
+
+  .faq__item[open] .faq__answer {
+    animation: faq-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  @keyframes faq-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  /* ---------- телефон (< 1024): одной колонкой ---------- */
+  @media (max-width: 1023.98px) {
+    .faq {
+      --pad: 20px;
+      --q-fs: 18px;
+      --text-fs: 16px;
+
+      display: flex;
+      flex-direction: column;
+      padding: 80px 20px;
+      text-align: center;
+    }
+
+    /* на телефоне кнопка уходит под список: колонка «растворяется» в общий поток */
+    .faq__side {
+      display: contents;
+    }
+
+    .faq__title {
+      font-size: 32px;
+    }
+
+    .faq__lead {
+      margin-top: 32px;
+    }
+
+    .faq__list {
+      margin-top: 32px;
+      text-align: left;
+    }
+
+    .faq__lead,
+    .faq__cta {
+      order: 1;
+    }
+
+    .faq__cta {
+      align-self: stretch;
+      margin-top: 16px;
+      padding-block: 20px;
+    }
+
+    .faq__answer {
+      padding-left: var(--pad);
+    }
+
+    .faq__icon {
+      width: 36px;
+      height: 36px;
+    }
+  }
+
+  /* ---------- ноутбук и десктоп (≥ 1024) ---------- */
+  @media (min-width: 1024px) {
+    /* 1024–1440: ноутбучные размеры × (ширина / 1440) */
+    .faq {
+      --k: calc(100vw / 1440);
+      --pad-x: calc(60 * var(--k));
+      --pad-top: calc(120 * var(--k));
+      --title-fs: calc(58 * var(--k));
+      --pad: 28px;
+      --q-fs: max(18px, calc(24 * var(--k)));
+      --text-fs: max(15px, calc(18 * var(--k)));
+
+      display: grid;
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      align-items: start;
+      gap: calc(80 * var(--k));
+      padding: calc(var(--pad-top) * 0.5) var(--pad-x) var(--pad-top);
+    }
+
+    /* заголовок с кнопкой стоят на месте, пока листается список */
+    .faq__side {
+      position: sticky;
+      top: calc(var(--pad-top) * 0.75);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .faq__title {
+      font-size: var(--title-fs);
+    }
+
+    .faq__lead {
+      max-width: 22em;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .faq {
+      --pad-x: calc(60px - 20 * (100vw - 1440px) / 480);
+      --pad-top: calc(120px - 8 * (100vw - 1440px) / 480);
+      --title-fs: calc(58px + 6 * (100vw - 1440px) / 480);
+      --pad: calc(28px + 4 * (100vw - 1440px) / 480);
+      --q-fs: calc(24px + 4 * (100vw - 1440px) / 480);
+      --text-fs: calc(18px + 2 * (100vw - 1440px) / 480);
+
+      gap: 80px;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .faq {
+      --pad-x: 40px;
+      --pad-top: 112px;
+      --title-fs: 64px;
+      --pad: 32px;
+      --q-fs: 28px;
+      --text-fs: 20px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .faq__item::before,
+    .faq__icon,
+    .faq__cta {
+      transition: none;
+    }
+
+    .faq__item[open] .faq__answer {
+      animation: none;
+    }
+  }
+</style>

@@ -26,6 +26,7 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 - `src/components/how/` и `src/data/how.ts` — «Как я работаю»: две ветки шагов; на телефоне переключатель на радиокнопках (`:has(:checked)`, без JS) и шкала прогресса с головой (sticky + scroll-driven); 3D-голова перетекает сюда из манифеста
 - `src/components/services/` и `src/data/services.ts` — «Услуги и стоимость» (`#services`): на ноутбуке и десктопе карточки «раздаются» из колоды по скроллу (scroll-driven), на телефоне — карусель со scroll-snap
 - Заявки: кнопки «Оставить заявку» в карточках → форма `src/components/services/LeadForm.vue` → `functions/api/lead.ts` (Cloudflare Pages Function) → Telegram. Проверка полей — `src/lib/lead/lead.ts` (общая для формы и функции). В Cloudflare нужны переменные `TELEGRAM_BOT_TOKEN` (секрет) и `TELEGRAM_CHAT_ID`; локально (`astro dev`/`preview`) функции нет — в e2e запрос подменяется
+- `src/components/faq/` и `src/data/faq.ts` — «Частые вопросы» (`#faq`): аккордеон на `<details name="faq">` без JS; кнопка «Задать вопрос» открывает ту же форму заявки
 - `tests/unit/` — Vitest, `tests/e2e/` — Playwright, `lighthouserc.cjs` — бюджет Lighthouse
 
 ## Правила
