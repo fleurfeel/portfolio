@@ -9,7 +9,7 @@ import { shouldTrackCursor } from '../../lib/mascot/math';
 import { hasHardwareWebGL } from '../../lib/mascot/webgl-support';
 import { offsetRect, posterBounds, visiblePoster } from '../../lib/stage/dom';
 import { approach, overallProgress, percentLabel } from '../../lib/preloader/progress';
-import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, headProgress, infoVisibility, partLine, sceneState, springStep, snapToStep, stageProgress } from '../../lib/stage/math';
+import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, headProgress, infoVisibility, partLine, sceneState, snapToStep, stageProgress } from '../../lib/stage/math';
 
 const props = defineProps<{ modelSizes: Record<string, number> }>();
 
@@ -249,16 +249,13 @@ onMounted(() => {
   };
 
   // голова летит из манифеста в «Как я работаю» и раздвигает строки (слова с data-part): каждая сторона
-  // строки пружинит в сторону, слова наклоняются по ходу движения; дальние от головы строки отстают — волна.
-  // Только с 3D и без reduced motion.
+  // строки плавно отъезжает в сторону (переход translate — в CSS). Только с 3D и без reduced motion.
   type PartLine = {
     box: HTMLElement;
     top: number;
     height: number;
     els: HTMLElement[];
     rects: { left: number; width: number }[];
-    springs: { x: number; v: number; target: number }[];
-    k: number;
   };
   const partEls = reducedMotion ? [] : [...document.querySelectorAll<HTMLElement>('[data-part]')];
   let lines: PartLine[] = [];
@@ -272,40 +269,10 @@ onMounted(() => {
       const b = offsetRect(box, document.body);
       const top = r.top - b.top;
       let line = lines.find((l) => l.box === box && Math.abs(l.top - top) < 2);
-      if (!line) lines.push((line = { box, top, height: r.height, els: [], rects: [], springs: [], k: 200 }));
+      if (!line) lines.push((line = { box, top, height: r.height, els: [], rects: [] }));
       line.els.push(w);
       line.rects.push({ left: r.left - b.left, width: r.width });
-      line.springs.push({ x: 0, v: 0, target: 0 });
     }
-  };
-
-  let partFrame = 0;
-  let partLast = 0;
-  const animateParts = (now: number) => {
-    const dt = Math.min(0.1, (now - partLast) / 1000 || 1 / 60);
-    partLast = now;
-    let moving = false;
-    for (const line of lines) {
-      line.springs.forEach((sp, i) => {
-        const next = springStep(sp, sp.target, dt, line.k);
-        sp.x = next.x;
-        sp.v = next.v;
-        const settled = Math.abs(sp.x - sp.target) < 0.1 && Math.abs(sp.v) < 2;
-        if (settled) [sp.x, sp.v] = [sp.target, 0];
-        else moving = true;
-        const el = line.els[i]!;
-        el.style.translate = sp.x ? `${sp.x.toFixed(1)}px 0` : '';
-        // наклон по ходу движения: верх слова чуть отстаёт
-        const tilt = Math.max(-10, Math.min(10, -sp.v * 0.012));
-        el.style.rotate = Math.abs(tilt) > 0.05 ? `${tilt.toFixed(2)}deg` : '';
-      });
-    }
-    partFrame = moving ? requestAnimationFrame(animateParts) : 0;
-  };
-  const kickParts = () => {
-    if (partFrame) return;
-    partLast = performance.now();
-    partFrame = requestAnimationFrame(animateParts);
   };
 
   const partWords = () => {
@@ -317,21 +284,15 @@ onMounted(() => {
     const cy = head ? head.top + head.height / 2 : 0;
     // проём с запасом: кудри 3D-головы шире её рамки
     const radius = head ? head.width * 0.8 : 0;
-    let changed = false;
     for (const line of lines) {
       const b = line.box.getBoundingClientRect();
       const dy = Math.max(0, Math.abs(cy - (b.top + line.top + line.height / 2)) - line.height / 2);
       const half = strength > 0 && dy < radius ? Math.sqrt(radius * radius - dy * dy) * strength : 0;
-      // ближняя к голове строка — жёсткая пружина, дальние мягче и отстают
-      line.k = 320 - 200 * Math.min(1, dy / radius || 0);
       partLine(line.rects, cx - b.left, half).forEach((x, i) => {
-        const sp = line.springs[i]!;
-        if (sp.target !== x) [sp.target, changed] = [x, true];
+        line.els[i]!.style.translate = x ? `${x.toFixed(1)}px 0` : '';
       });
     }
-    if (changed) kickParts();
   };
-  cleanups.push(() => cancelAnimationFrame(partFrame));
 
   const ro = new ResizeObserver(() => {
     sizeTail();

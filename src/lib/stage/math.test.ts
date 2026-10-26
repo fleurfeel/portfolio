@@ -11,7 +11,6 @@ import {
   lerpFit,
   aboutTransitionState,
   partLine,
-  springStep,
   sceneState,
   infoVisibility,
   headProgress,
@@ -320,37 +319,5 @@ describe('partLine', () => {
 
   it('если проём и так свободен, ничего не двигаем', () => {
     expect(partLine(line, 110, 8)).toEqual([0, 0, 0]);
-  });
-});
-
-describe('springStep', () => {
-  const run = (k: number, seconds: number, dt = 1 / 60) => {
-    let s = { x: 0, v: 0 };
-    let peak = 0;
-    for (let t = 0; t < seconds; t += dt) {
-      s = springStep(s, 100, dt, k);
-      peak = Math.max(peak, s.x);
-    }
-    return { ...s, peak };
-  };
-
-  it('доезжает до цели и останавливается', () => {
-    const s = run(200, 3);
-    expect(s.x).toBeCloseTo(100, 1);
-    expect(Math.abs(s.v)).toBeLessThan(1);
-  });
-
-  it('пружинит: проскакивает цель и возвращается', () => {
-    expect(run(200, 3).peak).toBeGreaterThan(105);
-  });
-
-  it('мягкая пружина отстаёт от жёсткой', () => {
-    expect(run(80, 0.15).x).toBeLessThan(run(300, 0.15).x);
-  });
-
-  it('устойчива при подвисании кадра', () => {
-    const s = run(300, 3, 0.5);
-    expect(Number.isFinite(s.x)).toBe(true);
-    expect(s.x).toBeCloseTo(100, 0);
   });
 });

@@ -261,19 +261,3 @@ export function partLine(words: readonly { left: number; width: number }[], cx: 
   }
   return words.map((w) => (w.left + w.width / 2 < cx ? (toLeft ? -toLeft : 0) : toRight));
 }
-
-/**
- * Шаг пружины к цели (полунеявный Эйлер, внутренние шаги по 1/120 с — устойчиво и при подвисании кадра).
- * k — жёсткость: больше — быстрее; затухание слабое, поэтому пружина чуть проскакивает цель и возвращается.
- */
-export function springStep(s: { x: number; v: number }, target: number, dt: number, k: number) {
-  const c = 2 * 0.42 * Math.sqrt(k);
-  const steps = Math.min(120, Math.max(1, Math.ceil(dt * 120)));
-  const h = dt / steps;
-  let { x, v } = s;
-  for (let i = 0; i < steps; i++) {
-    v += (k * (target - x) - c * v) * h;
-    x += v * h;
-  }
-  return { x, v };
-}
