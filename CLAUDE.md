@@ -24,6 +24,7 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 - `src/data/projects.ts` — кейсы, страницы `/projects` и `/projects/[slug]`
 - `src/components/manifesto/` — цитата-манифест после сцены; переворот слов волной по времени, когда сам текст поднялся на 20% экрана (запускает Stage.vue, атрибут `data-reveal`); 3D-маскот прилетает сюда одной головой (холст сцены фиксирован во весь экран)
 - `src/components/how/` и `src/data/how.ts` — «Как я работаю»: две ветки шагов; на телефоне переключатель на радиокнопках (`:has(:checked)`, без JS) и шкала прогресса с головой (sticky + scroll-driven); 3D-голова перетекает сюда из манифеста
+- `src/components/services/` и `src/data/services.ts` — «Услуги и стоимость» (`#services`): на ноутбуке и десктопе карточки «раздаются» из колоды по скроллу (scroll-driven), на телефоне — карусель со scroll-snap
 - `tests/unit/` — Vitest, `tests/e2e/` — Playwright, `lighthouserc.cjs` — бюджет Lighthouse
 
 ## Правила

@@ -1,0 +1,338 @@
+---
+// «Услуги и стоимость». Вайрфрейм Figma: 291:4969 (четыре карточки 424 × 535 на десктопе 1920), оформление — в стилистике сайта.
+// Ноутбук и десктоп: карточки лежат колодой по центру и при прокрутке «раздаются» по своим местам
+// (CSS scroll-driven animation по общей view-timeline сетки); от 1440 — в один ряд, 1024–1440 — сеткой 2 × 2.
+// Наведение — карточка подсвечивается акцентом и приподнимается.
+// Телефон: горизонтальная карусель со scroll-snap; карточка у края чуть меньше и бледнее.
+// Без поддержки scroll-driven animations или при reduced motion — карточки сразу на местах.
+import { services } from '../../data/services';
+---
+
+<section class="services" id="services" aria-labelledby="services-title">
+  <h2 id="services-title" class="services__title">Услуги и стоимость</h2>
+
+  <ul class="services__grid" tabindex="0" aria-label="Услуги — листайте вбок">
+    {
+      services.map((service, i) => (
+        <li class="services__card" style={`--i:${i}`}>
+          <span class="services__num" aria-hidden="true">
+            {String(i + 1).padStart(2, '0')}
+          </span>
+          <h3 class="services__name">{service.title}</h3>
+          <p class="services__text">{service.text}</p>
+          <p class="services__term">
+            <span class="services__term-label">Срок</span>
+            {service.term}
+          </p>
+          <p class="services__price">{service.price}</p>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .services {
+    position: relative;
+    z-index: 2; /* над фиксированным 3D-холстом */
+    overflow-x: clip;
+    color: var(--color-text);
+  }
+
+  .services__title {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .services__grid:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .services__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 30px;
+    background: var(--color-text);
+    color: var(--color-bg);
+    transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* подсветка при наведении — слой акцента под текстом (меняется только прозрачность) */
+  .services__card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-accent);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .services__card > :not(.services__num) {
+    position: relative;
+  }
+
+  .services__num {
+    position: absolute;
+    top: var(--pad);
+    right: var(--pad);
+    font-size: var(--term-fs);
+    font-weight: 600;
+    line-height: 1.2;
+    opacity: 0.5;
+  }
+
+  .services__name {
+    padding-right: 2.5em;
+    font-size: var(--name-fs);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+  }
+
+  .services__text {
+    margin-top: var(--text-gap);
+    font-size: var(--text-fs);
+    line-height: 1.3;
+    opacity: 0.8;
+  }
+
+  .services__term {
+    display: flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 8px;
+    margin-top: var(--text-gap);
+    padding: 4px 12px 4px 4px;
+    border: 1px solid color-mix(in srgb, var(--color-bg) 35%, transparent);
+    border-radius: 60px;
+    font-size: var(--term-fs);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .services__term-label {
+    padding: 2px 10px;
+    border-radius: 60px;
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .services__price {
+    margin-top: auto;
+    padding-top: var(--text-gap);
+    font-size: var(--price-fs);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+  }
+
+  @media (hover: hover) {
+    .services__card:hover {
+      translate: 0 -10px;
+    }
+
+    .services__card:hover::before {
+      opacity: 1;
+    }
+  }
+
+  /* ---------- телефон (< 1024): карусель ---------- */
+  @media (max-width: 1023.98px) {
+    .services {
+      --pad: 24px;
+      --name-fs: 26px;
+      --text-fs: 16px;
+      --text-gap: 16px;
+      --term-fs: 14px;
+      --price-fs: 28px;
+
+      padding: 80px 0;
+    }
+
+    .services__title {
+      padding-inline: 20px;
+      font-size: 32px;
+    }
+
+    .services__grid {
+      display: flex;
+      gap: 12px;
+      margin-top: 40px;
+      padding: 12px 20px;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: 20px;
+      scrollbar-width: none;
+    }
+
+    .services__grid::-webkit-scrollbar {
+      display: none;
+    }
+
+    .services__card {
+      flex: 0 0 min(82vw, 380px);
+      min-height: 440px;
+      padding: var(--pad);
+      scroll-snap-align: start;
+    }
+  }
+
+  /* карточка у края карусели чуть меньше и бледнее (таймлайн — через переменную: минификатор иначе ломает animation-timeline) */
+  @supports (animation-timeline: view()) {
+    @media (max-width: 1023.98px) and (prefers-reduced-motion: no-preference) {
+      .services__card {
+        --peek-tl: view(inline);
+
+        animation: services-peek linear both;
+        animation-timeline: var(--peek-tl);
+      }
+    }
+  }
+
+  @keyframes services-peek {
+    0% {
+      opacity: 0.6;
+      transform: scale(0.9);
+    }
+
+    35%,
+    65% {
+      opacity: 1;
+      transform: none;
+    }
+
+    100% {
+      opacity: 0.6;
+      transform: scale(0.9);
+    }
+  }
+
+  /* ---------- ноутбук и десктоп (≥ 1024) ---------- */
+  @media (min-width: 1024px) {
+    /* 1024–1440: сетка 2 × 2, размеры ноутбучного макета × (ширина / 1440) */
+    .services {
+      --k: calc(100vw / 1440);
+      --pad-x: calc(60 * var(--k));
+      --pad-top: calc(120 * var(--k));
+      --title-fs: calc(58 * var(--k));
+      --gap: 24px;
+      --pad: 30px;
+      --name-fs: 32px;
+      --text-fs: 18px;
+      --text-gap: 20px;
+      --term-fs: 16px;
+      --price-fs: 36px;
+
+      padding: calc(var(--pad-top) * 0.5) var(--pad-x) var(--pad-top);
+    }
+
+    .services__title {
+      font-size: var(--title-fs);
+    }
+
+    .services__grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--gap);
+      margin-top: calc(var(--pad-top) * 0.75);
+    }
+
+    .services__card {
+      /* для «раздачи»: место карточки в сетке и сдвиг до центра колоды */
+      --col: calc(var(--i) - 2 * round(down, var(--i) / 2, 1));
+      --row: round(down, var(--i) / 2, 1);
+      --dx: calc((0.5 - var(--col)) * (100% + var(--gap)));
+      --dy: calc((0.5 - var(--row)) * (100% + var(--gap)));
+      /* сетка 2 × 2 выше экрана: раздаём, пока заезжает первый ряд */
+      --deal-end: entry 50%;
+
+      min-height: 400px;
+      padding: var(--pad);
+    }
+  }
+
+  /* 1440–1920: один ряд из четырёх, плавно к десктопному вайрфрейму (карточка 424 × 535) */
+  @media (min-width: 1440px) {
+    .services {
+      --pad-x: calc(60px - 20 * (100vw - 1440px) / 480);
+      --pad-top: calc(120px - 8 * (100vw - 1440px) / 480);
+      --title-fs: calc(58px + 6 * (100vw - 1440px) / 480);
+      --pad: calc(24px + 6 * (100vw - 1440px) / 480);
+      --name-fs: calc(26px + 6 * (100vw - 1440px) / 480);
+      --text-fs: calc(16px + 4 * (100vw - 1440px) / 480);
+      --text-gap: calc(16px + 4 * (100vw - 1440px) / 480);
+      --term-fs: calc(14px + 2 * (100vw - 1440px) / 480);
+      --price-fs: calc(28px + 8 * (100vw - 1440px) / 480);
+    }
+
+    .services__grid {
+      grid-template-columns: repeat(4, minmax(0, 424px));
+      justify-content: center;
+    }
+
+    .services__card {
+      --dx: calc((1.5 - var(--i)) * (100% + var(--gap)));
+      --dy: 0px;
+      --deal-end: entry 90%;
+
+      min-height: 0;
+      aspect-ratio: 424 / 535;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .services {
+      --pad-x: 40px;
+      --pad-top: 112px;
+      --title-fs: 64px;
+      --pad: 30px;
+      --name-fs: 32px;
+      --text-fs: 20px;
+      --text-gap: 20px;
+      --term-fs: 16px;
+      --price-fs: 36px;
+    }
+  }
+
+  /* «раздача»: пока сетка заезжает на экран, карточки лежат веером колодой по центру и расходятся по местам */
+  @supports (animation-timeline: view()) {
+    @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+      .services__grid {
+        view-timeline-name: --services-deal;
+      }
+
+      .services__card {
+        --deal-tl: --services-deal;
+
+        z-index: calc(4 - var(--i));
+        animation: services-deal linear both;
+        animation-timeline: var(--deal-tl);
+        animation-range: entry 0% var(--deal-end); /* сетка заехала на экран — карточки на местах */
+      }
+    }
+  }
+
+  @keyframes services-deal {
+    from {
+      transform: translate(var(--dx), var(--dy)) rotate(calc((var(--i) - 1.5) * 5deg)) scale(0.92);
+    }
+
+    to {
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .services__card,
+    .services__card::before {
+      transition: none;
+    }
+  }
+</style>
