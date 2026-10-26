@@ -14,6 +14,7 @@ import {
   sceneState,
   infoVisibility,
   headProgress,
+  flightProgress,
   snapToStep,
 } from './math';
 
@@ -182,18 +183,37 @@ describe('infoVisibility', () => {
 
 describe('headProgress', () => {
   const vh = 1000;
-  it('манифест ещё под экраном — 0', () => {
+  it('пока манифест показался меньше чем на треть экрана — тело целиком', () => {
     expect(headProgress(vh, vh)).toBe(0);
-    expect(headProgress(vh * 1.5, vh)).toBe(0);
+    expect(headProgress(vh * 0.7, vh)).toBe(0);
   });
 
-  it('манифест почти встал на экран — 1', () => {
-    expect(headProgress(vh * 0.15, vh)).toBe(1);
+  it('голова — только когда манифест встал на экран целиком', () => {
+    expect(headProgress(vh * 0.15, vh)).toBeLessThan(1);
+    expect(headProgress(0, vh)).toBe(1);
     expect(headProgress(-vh, vh)).toBe(1);
   });
 
   it('плавно и только вперёд', () => {
-    const v = [0.9, 0.7, 0.5, 0.3].map((f) => headProgress(vh * f, vh));
+    const v = [0.6, 0.45, 0.3, 0.15].map((f) => headProgress(vh * f, vh));
+    for (let i = 1; i < v.length; i++) expect(v[i]).toBeGreaterThan(v[i - 1]!);
+  });
+});
+
+describe('flightProgress', () => {
+  const vh = 1000;
+  it('цель ещё под экраном — 0', () => {
+    expect(flightProgress(vh, vh)).toBe(0);
+    expect(flightProgress(vh * 1.5, vh)).toBe(0);
+  });
+
+  it('цель почти встала на экран — 1', () => {
+    expect(flightProgress(vh * 0.15, vh)).toBe(1);
+    expect(flightProgress(-vh, vh)).toBe(1);
+  });
+
+  it('плавно и только вперёд', () => {
+    const v = [0.9, 0.7, 0.5, 0.3].map((f) => flightProgress(vh * f, vh));
     for (let i = 1; i < v.length; i++) expect(v[i]).toBeGreaterThan(v[i - 1]!);
   });
 });

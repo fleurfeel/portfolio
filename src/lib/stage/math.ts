@@ -223,10 +223,18 @@ export function infoVisibility(active: number) {
 
 /**
  * Переход «тело → голова»: по тому, где верх секции манифеста (px от верха экрана).
- * 0 — манифест ещё под экраном, 1 — почти встал на место.
+ * 0 — манифест показался меньше чем на треть экрана (маскот ещё целиком), 1 — встал на экран целиком.
  */
 export function headProgress(manifestoTop: number, viewport: number) {
-  return smoothstep(0, 0.85, (viewport - manifestoTop) / viewport);
+  return smoothstep(0.35, 1, (viewport - manifestoTop) / viewport);
+}
+
+/**
+ * Перелёт головы к цели ниже по странице: по тому, где верх цели (px от верха экрана).
+ * 0 — цель ещё под экраном, 1 — почти встала на место.
+ */
+export function flightProgress(targetTop: number, viewport: number) {
+  return smoothstep(0, 0.85, (viewport - targetTop) / viewport);
 }
 
 /**

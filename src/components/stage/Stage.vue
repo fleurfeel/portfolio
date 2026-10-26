@@ -9,7 +9,7 @@ import { shouldTrackCursor } from '../../lib/mascot/math';
 import { hasHardwareWebGL } from '../../lib/mascot/webgl-support';
 import { offsetRect, posterBounds, visiblePoster } from '../../lib/stage/dom';
 import { approach, overallProgress, percentLabel } from '../../lib/preloader/progress';
-import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, headProgress, infoVisibility, partLine, sceneState, snapToStep, stageProgress } from '../../lib/stage/math';
+import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, flightProgress, headProgress, infoVisibility, partLine, sceneState, snapToStep, stageProgress } from '../../lib/stage/math';
 
 const props = defineProps<{ modelSizes: Record<string, number> }>();
 
@@ -242,7 +242,7 @@ onMounted(() => {
       // голова манифеста → голова «Как я работаю»: доходит, когда та поднялась примерно на 60% экрана.
       // Рамку берём живую: на ноутбуке и десктопе «Как я работаю» — закреплённый (sticky) экран
       const r = howHeadPoster.getBoundingClientRect();
-      flight = headProgress(r.top - innerHeight * 0.45, innerHeight);
+      flight = flightProgress(r.top - innerHeight * 0.45, innerHeight);
       if (flight > 0) head = mixRect(head, { left: r.left, top: r.top, width: r.width, height: r.height }, flight);
     }
     return { head, headMix, flight };
