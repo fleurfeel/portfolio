@@ -24,7 +24,9 @@ test.describe('как я работаю', () => {
         const w = document.querySelector('.how__track--client .how__window')!.getBoundingClientRect();
         scrollTo(0, w.top + scrollY + w.height * f - innerHeight / 2);
       }, f);
-      return page.evaluate(() => {
+      return page.evaluate(async () => {
+        // анимация по скроллу обновляется со следующим кадром
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
         const head = document.querySelector('.how__track--client .how__rail-head')!.getBoundingClientRect();
         const m = new DOMMatrix(getComputedStyle(document.querySelector('.how__track--client .how__rail-fill')!).transform);
         return { headCenter: head.top + head.height / 2, vh: innerHeight, fill: m.d };

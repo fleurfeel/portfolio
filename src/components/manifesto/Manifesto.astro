@@ -4,6 +4,7 @@
 // не по скроллу, — иначе при прокрутке колесом эффект проскакивает незаметно. Включает и запускает
 // остров Stage.vue (атрибут data-reveal: '' — ждём, 'in' — играем). Без JS и при reduced motion текст виден сразу.
 // Голова — постер: 3D-маскот из сцены перелетает сюда и остаётся одной головой (тело растворяется).
+// Дальше голова летит вниз, в «Как я работаю», и расталкивает слова (свойство translate ставит Stage.vue).
 import { Image } from 'astro:assets';
 import head from '../../assets/manifesto/head.png';
 
@@ -48,6 +49,7 @@ const words = text.split(' ');
     gap: 24px;
     min-height: 100svh;
     padding: 80px 13px;
+    overflow-x: clip; /* раздвинутые головой строки не дают горизонтальной прокрутки */
     color: var(--color-text);
   }
 
@@ -139,8 +141,9 @@ const words = text.split(' ');
     transform: none;
     transition:
       opacity 0.5s ease,
-      transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
-    transition-delay: calc(var(--i) * 28ms);
+      transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+      translate 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i) * 28ms), calc(var(--i) * 28ms), 0s;
   }
 
   @media (prefers-reduced-motion: reduce) {

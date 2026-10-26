@@ -10,6 +10,7 @@ import {
   transitionState,
   lerpFit,
   aboutTransitionState,
+  partLine,
   sceneState,
   infoVisibility,
   headProgress,
@@ -278,5 +279,45 @@ describe('formatCounter', () => {
     expect(formatCounter(0, 7)).toBe('01/07');
     expect(formatCounter(6, 7)).toBe('07/07');
     expect(formatCounter(9, 12)).toBe('10/12');
+  });
+});
+
+describe('partLine', () => {
+  // строка: слова по 100 px через 20 px, голова в центре второго слова (x = 170)
+  const line = [
+    { left: 0, width: 100 },
+    { left: 120, width: 100 },
+    { left: 240, width: 100 },
+  ];
+
+  it('голова не задевает строку — слова на месте', () => {
+    expect(partLine(line, 170, 0)).toEqual([0, 0, 0]);
+  });
+
+  it('слова расходятся от головы в обе стороны', () => {
+    const [a, b, c] = partLine(line, 150, 60);
+    expect(a).toBeLessThan(0);
+    expect(b).toBeGreaterThan(0);
+    expect(c).toBeGreaterThan(0);
+  });
+
+  it('проём под головой свободен', () => {
+    const cx = 150;
+    const half = 60;
+    const shifts = partLine(line, cx, half);
+    line.forEach((w, i) => {
+      const left = w.left + shifts[i]!;
+      const right = left + w.width;
+      expect(right <= cx - half + 1e-9 || left >= cx + half - 1e-9).toBe(true);
+    });
+  });
+
+  it('слова с одной стороны едут вместе — не налезают друг на друга', () => {
+    const [, b, c] = partLine(line, 150, 60);
+    expect(b).toBeCloseTo(c!, 9);
+  });
+
+  it('если проём и так свободен, ничего не двигаем', () => {
+    expect(partLine(line, 110, 8)).toEqual([0, 0, 0]);
   });
 });

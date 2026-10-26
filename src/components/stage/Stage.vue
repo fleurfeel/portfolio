@@ -9,7 +9,7 @@ import { shouldTrackCursor } from '../../lib/mascot/math';
 import { hasHardwareWebGL } from '../../lib/mascot/webgl-support';
 import { offsetRect, posterBounds, visiblePoster } from '../../lib/stage/dom';
 import { approach, overallProgress, percentLabel } from '../../lib/preloader/progress';
-import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, headProgress, infoVisibility, sceneState, snapToStep, stageProgress } from '../../lib/stage/math';
+import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, headProgress, infoVisibility, partLine, sceneState, snapToStep, stageProgress } from '../../lib/stage/math';
 
 const props = defineProps<{ modelSizes: Record<string, number> }>();
 
@@ -139,6 +139,7 @@ onMounted(() => {
     }
     // холст фиксирован во весь экран: клики по маскоту — только пока сцена на экране
     layer.style.pointerEvents = pin.getBoundingClientRect().top < -1 ? 'none' : '';
+    partWords();
     invalidate3d();
   }
   const schedule = () => {
@@ -225,13 +226,68 @@ onMounted(() => {
     height: a.height + (b.height - a.height) * m,
   });
 
+  // рамка 3D-головы в окне сейчас и прогресс «тело → голова»
+  const headNow = () => {
+    let head = headDoc ? { ...headDoc, top: headDoc.top - scrollY } : null;
+    const headMix = manifesto ? headProgress(manifesto.getBoundingClientRect().top, innerHeight) : 0;
+    if (head && howHeadPoster) {
+      // голова манифеста → голова «Как я работаю»: доходит, когда та поднялась примерно на 60% экрана.
+      // Рамку берём живую: на ноутбуке и десктопе «Как я работаю» — закреплённый (sticky) экран
+      const r = howHeadPoster.getBoundingClientRect();
+      const m = headProgress(r.top - innerHeight * 0.45, innerHeight);
+      if (m > 0) head = mixRect(head, { left: r.left, top: r.top, width: r.width, height: r.height }, m);
+    }
+    return { head, headMix };
+  };
+
+  // голова пролетает сквозь манифест и раздвигает строки (только с 3D и без reduced motion)
+  const words = manifesto && !reducedMotion ? [...manifesto.querySelectorAll<HTMLElement>('.manifesto__word')] : [];
+  // строки манифеста: слова с одинаковым offsetTop
+  let lines: { top: number; height: number; els: HTMLElement[]; rects: { left: number; width: number }[] }[] = [];
+  const measureWords = () => {
+    lines = [];
+    for (const w of words) {
+      const r = offsetRect(w, document.body);
+      let line = lines.find((l) => Math.abs(l.top - r.top) < 2);
+      if (!line) lines.push((line = { top: r.top, height: r.height, els: [], rects: [] }));
+      line.els.push(w);
+      line.rects.push(r);
+    }
+  };
+  let parted = false;
+  const partWords = () => {
+    if (!words.length || stage.dataset.mascot !== 'ready') return;
+    const { head, headMix } = headNow();
+    const box = manifesto!.getBoundingClientRect();
+    const near = head && headMix > 0 && box.bottom > 0 && box.top < innerHeight;
+    if (!near) {
+      if (parted) words.forEach((w) => w.style.removeProperty('translate'));
+      parted = false;
+      return;
+    }
+    const cx = head.left + head.width / 2;
+    const cy = head.top + scrollY + head.height / 2;
+    // проём по размеру головы; на высоте строки — хорда круга
+    const radius = head.width * 0.45;
+    for (const line of lines) {
+      const dy = Math.max(0, Math.abs(cy - (line.top + line.height / 2)) - line.height / 2);
+      const half = dy < radius ? Math.sqrt(radius * radius - dy * dy) * headMix : 0;
+      partLine(line.rects, cx, half).forEach((x, i) => {
+        line.els[i]!.style.translate = x ? `${x.toFixed(1)}px 0` : '';
+      });
+    }
+    parted = true;
+  };
+
   const ro = new ResizeObserver(() => {
     sizeTail();
     measureHead();
+    measureWords();
     schedule();
   });
   ro.observe(pin);
   ro.observe(aboutLayer);
+  if (manifesto) ro.observe(manifesto);
   addEventListener('scroll', schedule, { passive: true });
   mobile.addEventListener('change', schedule);
   stage.addEventListener('focusin', onFocus);
@@ -243,6 +299,7 @@ onMounted(() => {
     cancelAnimationFrame(frame);
   });
   sizeTail();
+  measureWords();
   update();
 
   // --- 3D
@@ -280,19 +337,7 @@ onMounted(() => {
         container: layer,
         measure,
         getTransition: () => transition,
-        getDynamic: () => {
-          const pinTop = pin.getBoundingClientRect().top;
-          let head = headDoc ? { ...headDoc, top: headDoc.top - scrollY } : null;
-          const headMix = manifesto ? headProgress(manifesto.getBoundingClientRect().top, innerHeight) : 0;
-          if (head && howHeadPoster) {
-            // голова манифеста → голова «Как я работаю»: доходит, когда та поднялась примерно на 60% экрана.
-            // Рамку берём живую: на ноутбуке и десктопе «Как я работаю» — закреплённый (sticky) экран
-            const r = howHeadPoster.getBoundingClientRect();
-            const m = headProgress(r.top - innerHeight * 0.45, innerHeight);
-            if (m > 0) head = mixRect(head, { left: r.left, top: r.top, width: r.width, height: r.height }, m);
-          }
-          return { pinTop, head, headMix };
-        },
+        getDynamic: () => ({ pinTop: pin.getBoundingClientRect().top, ...headNow() }),
         observe: [pin, manifesto, how].filter((el): el is HTMLElement => !!el),
         reducedMotion,
         trackCursor: shouldTrackCursor({ canHover, reducedMotion }),

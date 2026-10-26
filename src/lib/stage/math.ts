@@ -244,3 +244,20 @@ export function formatCounter(index: number, count: number) {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(index + 1)}/${pad(count)}`;
 }
+
+/**
+ * Манифест: голова пролетает сквозь текст и раздвигает строку, как занавес.
+ * words — слова одной строки (left, width в px), cx — центр головы по x, half — полуширина проёма
+ * на высоте этой строки. Слова левее центра головы уходят влево, правее — вправо, каждая сторона
+ * целиком на одно и то же расстояние: так слова не налезают друг на друга. Возвращает сдвиги по x.
+ */
+export function partLine(words: readonly { left: number; width: number }[], cx: number, half: number) {
+  if (half <= 0) return words.map(() => 0);
+  let toLeft = 0;
+  let toRight = 0;
+  for (const w of words) {
+    if (w.left + w.width / 2 < cx) toLeft = Math.max(toLeft, w.left + w.width - (cx - half));
+    else toRight = Math.max(toRight, cx + half - w.left);
+  }
+  return words.map((w) => (w.left + w.width / 2 < cx ? (toLeft ? -toLeft : 0) : toRight));
+}
