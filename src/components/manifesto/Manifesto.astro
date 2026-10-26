@@ -49,6 +49,9 @@ const words = text.split(' ');
     padding: 80px 13px;
     color: var(--color-text);
     view-timeline-name: --manifesto;
+    /* таймлайн через переменную: иначе минификатор склеивает animation-timeline с шортхендом animation,
+       и браузер отбрасывает всё объявление — анимации нет */
+    --manifesto-timeline: --manifesto;
   }
 
   .manifesto__head {
@@ -131,7 +134,7 @@ const words = text.split(' ');
     @media (prefers-reduced-motion: no-preference) {
       .manifesto__head {
         animation: manifesto-rise linear both;
-        animation-timeline: --manifesto;
+        animation-timeline: var(--manifesto-timeline);
         animation-range: entry 0% entry 35%;
       }
 
@@ -139,7 +142,7 @@ const words = text.split(' ');
       .manifesto__word {
         transform-origin: 50% 100%;
         animation: manifesto-flip linear both;
-        animation-timeline: --manifesto;
+        animation-timeline: var(--manifesto-timeline);
         animation-range: entry calc(15% + var(--s) * 55%) entry calc(30% + var(--s) * 55%);
       }
     }
