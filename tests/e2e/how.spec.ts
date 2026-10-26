@@ -15,6 +15,28 @@ test.describe('как я работаю', () => {
     await expect(how.getByText('Бриф', { exact: true })).toBeHidden();
   });
 
+  test('телефон: голова-прогресс держится по центру экрана, линия заполняется по скроллу', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'шкала прогресса — на телефоне');
+    await page.goto('/', { waitUntil: 'networkidle' });
+    const at = async (f: number) => {
+      await page.evaluate((f) => {
+        document.documentElement.style.scrollSnapType = 'none';
+        const w = document.querySelector('.how__track--client .how__window')!.getBoundingClientRect();
+        scrollTo(0, w.top + scrollY + w.height * f - innerHeight / 2);
+      }, f);
+      return page.evaluate(() => {
+        const head = document.querySelector('.how__track--client .how__rail-head')!.getBoundingClientRect();
+        const m = new DOMMatrix(getComputedStyle(document.querySelector('.how__track--client .how__rail-fill')!).transform);
+        return { headCenter: head.top + head.height / 2, vh: innerHeight, fill: m.d };
+      });
+    };
+    const a = await at(0.3);
+    const b = await at(0.7);
+    expect(Math.abs(a.headCenter - a.vh / 2)).toBeLessThan(4);
+    expect(Math.abs(b.headCenter - b.vh / 2)).toBeLessThan(4);
+    expect(b.fill).toBeGreaterThan(a.fill + 0.2);
+  });
+
   test('десктоп: обе ветки рядом, переключателя нет; шаги листаются на закреплённом экране', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'две колонки — на ноутбуке и десктопе');
     await page.emulateMedia({ reducedMotion: 'no-preference' });

@@ -4,7 +4,8 @@
 // на месте листает пары шагов: текущая резкая, соседние в тумане (CSS scroll-driven animations);
 // после остановки прокрутки Stage.vue доводит её ровно до ближайшего шага. Голова — между колонками,
 // на уровне текущего шага. Без поддержки или при reduced motion — обычные две колонки.
-// Телефон: вместо двух колонок — переключатель «для заказчика / для работодателя» на радиокнопках, без JS.
+// Телефон: вместо двух колонок — переключатель «для заказчика / для работодателя» на радиокнопках, без JS;
+// слева от шагов — шкала прогресса: по ней едет маленькая голова (sticky), линия заполняется по скроллу.
 // Голова — постер: 3D-голова из манифеста перетекает сюда.
 import { Image } from 'astro:assets';
 import head from '../../assets/manifesto/head.png';
@@ -51,6 +52,12 @@ const n = tracks[0]!.steps.length;
             <h3 class="how__track-title">{track.title}</h3>
           </div>
           <div class="how__window">
+            <div class="how__rail" aria-hidden="true">
+              <span class="how__rail-fill" />
+              <span class="how__rail-head">
+                <Image src={head} widths={[40, 80, 120]} sizes="40px" alt="" loading="lazy" decoding="async" />
+              </span>
+            </div>
             <ol class="how__steps">
               {track.steps.map((step, i) => (
                 <li class="how__step" style={`--row:${i + 2}`}>
@@ -137,8 +144,10 @@ const n = tracks[0]!.steps.length;
 
   /* ---------- телефон (< 1024): переключатель и одна колонка ---------- */
   @media (max-width: 1023.98px) {
+    /* снизу — запас, чтобы конец списка доезжал до середины экрана и шкала заполнялась до конца
+       (пока секция последняя на странице) */
     .how {
-      padding: 80px 20px;
+      padding: 80px 20px max(80px, 50svh);
     }
 
     .how__title {
@@ -209,7 +218,12 @@ const n = tracks[0]!.steps.length;
       display: flex;
       flex-direction: column;
       gap: 40px;
-      margin-top: 32px;
+    }
+
+    .how__step {
+      align-items: flex-start;
+      gap: 8px;
+      text-align: left;
     }
 
     .how__step-title {
@@ -218,6 +232,93 @@ const n = tracks[0]!.steps.length;
 
     .how__step-text {
       font-size: 16px;
+    }
+
+    /* шкала прогресса слева от шагов */
+    .how__window {
+      position: relative;
+      margin-top: 32px;
+      padding-left: 48px;
+      text-align: left;
+    }
+
+    .how__rail {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 19px;
+      width: 2px;
+      border-radius: 2px;
+      background: color-mix(in srgb, var(--color-secondary) 22%, var(--color-bg));
+    }
+
+    .how__rail-fill {
+      position: absolute;
+      inset: 0;
+      border-radius: 2px;
+      background: var(--color-accent);
+      transform: scaleY(0);
+      transform-origin: top;
+    }
+
+    /* голова держится по центру экрана, пока список шагов проезжает мимо, и упирается в его края */
+    .how__rail-head {
+      position: sticky;
+      top: calc(50svh - 18px);
+      display: block;
+      width: 36px;
+      margin-left: -17px;
+    }
+
+    .how__rail-head :global(img) {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    @supports (animation-timeline: view()) {
+      .how__window {
+        /* таймлайн через переменную: иначе минификатор склеит его с шортхендом animation */
+        --rail-timeline: view();
+      }
+
+      /* линия заполняется от «начало списка в центре экрана» до «конец списка в центре экрана» */
+      .how__rail-fill {
+        animation: how-rail linear both;
+        animation-timeline: var(--rail-timeline);
+        animation-range: cover 50svh cover calc(100% - 50svh);
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .how__step {
+          --step-timeline: view();
+
+          animation: how-step-soft linear both;
+          animation-timeline: var(--step-timeline);
+          animation-range: cover 0% cover 100%;
+        }
+      }
+    }
+  }
+
+  @keyframes how-rail {
+    to {
+      transform: scaleY(1);
+    }
+  }
+
+  /* лёгкий туман: шаги вдали от центра читаются, но текущий заметно ярче */
+  @keyframes how-step-soft {
+    0%,
+    100% {
+      opacity: 0.45;
+      filter: blur(1.5px);
+    }
+
+    38%,
+    62% {
+      opacity: 1;
+      filter: blur(0);
     }
   }
 
@@ -247,7 +348,8 @@ const n = tracks[0]!.steps.length;
       font-size: var(--title-fs);
     }
 
-    .how__switch {
+    .how__switch,
+    .how__rail {
       display: none;
     }
 
