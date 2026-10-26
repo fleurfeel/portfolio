@@ -2,6 +2,7 @@
 // Все проекты — заглушка до макета.
 import { Image } from 'astro:assets';
 import { projectUrl, projects } from '../../data/projects';
+import Footer from '../../components/footer/Footer.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { formatCounter } from '../../lib/stage/math';
 ---
@@ -29,6 +30,7 @@ import { formatCounter } from '../../lib/stage/math';
       }
     </ul>
   </main>
+  <Footer />
 </BaseLayout>
 
 <style>

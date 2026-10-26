@@ -91,9 +91,15 @@ test.describe('услуги и стоимость', () => {
 
     await dialog.getByLabel('Имя').fill('Анна');
     await dialog.getByLabel('Как с вами связаться').fill('@anna');
+    // без галочки согласия на обработку данных заявка не уходит
+    await dialog.getByRole('button', { name: 'Отправить' }).click();
+    await expect(dialog.getByText('Без согласия не смогу принять заявку')).toBeVisible();
+    expect(sent).toBeNull();
+
+    await dialog.getByRole('checkbox').check();
     await dialog.getByRole('button', { name: 'Отправить' }).click();
     await expect(dialog.getByText('Заявка отправлена')).toBeVisible();
-    expect(sent).toMatchObject({ service: 'Лендинг', name: 'Анна', contact: '@anna' });
+    expect(sent).toMatchObject({ service: 'Лендинг', name: 'Анна', contact: '@anna', consent: true });
 
     await dialog.getByRole('button', { name: 'Хорошо' }).click();
     await expect(dialog).toBeHidden();
@@ -109,6 +115,7 @@ test.describe('услуги и стоимость', () => {
     }).toPass();
     await dialog.getByLabel('Имя').fill('Анна');
     await dialog.getByLabel('Как с вами связаться').fill('+7 900 000-00-00');
+    await dialog.getByRole('checkbox').check();
     await dialog.getByRole('button', { name: 'Отправить' }).click();
     await expect(dialog.getByRole('alert')).toContainText('Не получилось отправить');
     await expect(dialog.getByLabel('Имя')).toHaveValue('Анна');

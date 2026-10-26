@@ -27,6 +27,7 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 - `src/components/services/` и `src/data/services.ts` — «Услуги и стоимость» (`#services`): на ноутбуке и десктопе карточки «раздаются» из колоды по скроллу (scroll-driven), на телефоне — карусель со scroll-snap
 - Заявки: кнопки «Оставить заявку» в карточках → форма `src/components/services/LeadForm.vue` → `functions/api/lead.ts` (Cloudflare Pages Function) → Telegram. Проверка полей — `src/lib/lead/lead.ts` (общая для формы и функции). В Cloudflare нужны переменные `TELEGRAM_BOT_TOKEN` (секрет) и `TELEGRAM_CHAT_ID`; локально (`astro dev`/`preview`) функции нет — в e2e запрос подменяется
 - `src/components/faq/` и `src/data/faq.ts` — «Частые вопросы» (`#faq`): аккордеон на `<details name="faq">` без JS; кнопка «Задать вопрос» открывает ту же форму заявки
+- `src/components/footer/` — футер (тёмный, голова маскота выглядывает снизу, ссылки на документы); `src/data/legal.ts` + `src/components/legal/` — страницы `/privacy` и `/consent` (152-ФЗ). Форма заявки требует галочку согласия (`consent` в `parseLead`). Меняя текст документов, обновлять `edition`
 - `tests/unit/` — Vitest, `tests/e2e/` — Playwright, `lighthouserc.cjs` — бюджет Lighthouse
 
 ## Правила

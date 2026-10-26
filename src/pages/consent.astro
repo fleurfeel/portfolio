@@ -1,0 +1,6 @@
+---
+import LegalPage from '../components/legal/LegalPage.astro';
+import { consent } from '../data/legal';
+---
+
+<LegalPage doc={consent} related={{ href: '/privacy', label: 'Политика обработки персональных данных' }} />

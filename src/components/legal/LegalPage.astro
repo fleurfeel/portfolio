@@ -1,0 +1,107 @@
+---
+// Страница документа (политика, согласие): заголовок, вводный абзац, разделы списками, футер.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Footer from '../footer/Footer.astro';
+import { edition, type LegalDoc } from '../../data/legal';
+
+interface Props {
+  doc: LegalDoc;
+  /** ссылка на второй документ в конце страницы */
+  related: { href: string; label: string };
+}
+
+const { doc, related } = Astro.props;
+---
+
+<BaseLayout title={`${doc.title} — Пашковский Руслан`} description={doc.description}>
+  <main class="legal">
+    <a class="legal__back" href="/">← На главную</a>
+    <h1 class="legal__title">{doc.title}</h1>
+    <p class="legal__edition">Редакция от {edition}</p>
+    <p class="legal__intro">{doc.intro}</p>
+
+    {
+      doc.sections.map((section) => (
+        <section class="legal__section">
+          <h2>{section.title}</h2>
+          <ul>
+            {section.items.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+
+    <p class="legal__related"><a href={related.href}>{related.label} →</a></p>
+  </main>
+  <Footer />
+</BaseLayout>
+
+<style>
+  .legal {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 20px 96px;
+    color: var(--color-text);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .legal__back,
+  .legal__related a {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .legal a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .legal__title {
+    margin-top: 40px;
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+  }
+
+  .legal__edition {
+    margin-top: 12px;
+    color: var(--color-secondary);
+    font-size: 14px;
+  }
+
+  .legal__intro {
+    margin-top: 32px;
+  }
+
+  .legal__section {
+    margin-top: 32px;
+  }
+
+  .legal__section h2 {
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+  }
+
+  .legal__section ul {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding-left: 20px;
+    list-style: disc;
+  }
+
+  .legal__section li::marker {
+    color: var(--color-accent);
+  }
+
+  .legal__related {
+    margin-top: 48px;
+  }
+</style>

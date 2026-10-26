@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { LEAD_LIMITS, leadMessage, parseLead } from './lead';
 
-const valid = { service: 'Лендинг', name: 'Анна', contact: '@anna', message: 'Нужен сайт для студии' };
+const lead = { service: 'Лендинг', name: 'Анна', contact: '@anna', message: 'Нужен сайт для студии' };
+const valid = { ...lead, consent: true };
 
 describe('parseLead', () => {
   it('принимает заполненную заявку и обрезает пробелы', () => {
     const r = parseLead({ ...valid, name: '  Анна ', contact: ' @anna  ' });
-    expect(r).toEqual({ ok: true, lead: { ...valid } });
+    expect(r).toEqual({ ok: true, lead });
   });
 
   it('комментарий необязателен', () => {
     const r = parseLead({ ...valid, message: '' });
     expect(r.ok && r.lead.message).toBe('');
-    expect(parseLead({ service: 'Лендинг', name: 'Анна', contact: '@anna' }).ok).toBe(true);
+    expect(parseLead({ service: 'Лендинг', name: 'Анна', contact: '@anna', consent: true }).ok).toBe(true);
   });
 
   it('без имени или контакта — ошибка с названием поля', () => {
@@ -24,6 +25,12 @@ describe('parseLead', () => {
   it('слишком длинные поля — ошибка', () => {
     expect(parseLead({ ...valid, message: 'а'.repeat(LEAD_LIMITS.message + 1) })).toEqual({ ok: false, error: 'message' });
     expect(parseLead({ ...valid, name: 'а'.repeat(LEAD_LIMITS.name + 1) })).toEqual({ ok: false, error: 'name' });
+  });
+
+  it('без согласия на обработку данных — ошибка', () => {
+    expect(parseLead({ ...valid, consent: false })).toEqual({ ok: false, error: 'consent' });
+    expect(parseLead({ ...lead })).toEqual({ ok: false, error: 'consent' });
+    expect(parseLead({ ...valid, consent: 'да' })).toEqual({ ok: false, error: 'consent' });
   });
 
   it('заполненное поле-ловушка — спам', () => {
@@ -44,12 +51,12 @@ describe('parseLead', () => {
 
 describe('leadMessage', () => {
   it('услуга, имя, контакт и комментарий — каждый с новой строки', () => {
-    expect(leadMessage(valid)).toBe(
+    expect(leadMessage(lead)).toBe(
       'Новая заявка с сайта\nУслуга: Лендинг\nИмя: Анна\nКонтакт: @anna\nКомментарий: Нужен сайт для студии',
     );
   });
 
   it('без комментария — без пустой строки', () => {
-    expect(leadMessage({ ...valid, message: '' })).toBe('Новая заявка с сайта\nУслуга: Лендинг\nИмя: Анна\nКонтакт: @anna');
+    expect(leadMessage({ ...lead, message: '' })).toBe('Новая заявка с сайта\nУслуга: Лендинг\nИмя: Анна\nКонтакт: @anna');
   });
 });

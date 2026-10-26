@@ -7,7 +7,7 @@ import { type LeadError, parseLead } from '../../lib/lead/lead';
 const props = defineProps<{ services: string[] }>();
 
 const dialog = ref<HTMLDialogElement>();
-const form = reactive({ service: '', name: '', contact: '', message: '', website: '' });
+const form = reactive({ service: '', name: '', contact: '', message: '', website: '', consent: false });
 const state = ref<'idle' | 'sending' | 'sent' | 'error'>('idle');
 const error = ref<LeadError | null>(null);
 
@@ -15,6 +15,7 @@ const errors: Partial<Record<LeadError, string>> = {
   name: 'Напишите, как к вам обращаться',
   contact: 'Оставьте телефон, почту или ник в Telegram',
   message: 'Комментарий получился слишком длинным',
+  consent: 'Без согласия не смогу принять заявку',
 };
 
 function open(service: string) {
@@ -42,7 +43,7 @@ async function submit() {
     });
     if (!res.ok) throw new Error(String(res.status));
     state.value = 'sent';
-    Object.assign(form, { name: '', contact: '', message: '' });
+    Object.assign(form, { name: '', contact: '', message: '', consent: false });
   } catch {
     state.value = 'error';
   }
@@ -103,6 +104,15 @@ onBeforeUnmount(() => document.removeEventListener('click', onClick));
           <textarea v-model="form.message" name="message" rows="3" :aria-invalid="error === 'message'" maxlength="2000" />
           <span v-if="error === 'message'" class="lead__error">{{ errors.message }}</span>
         </label>
+
+        <label class="lead__consent">
+          <input v-model="form.consent" type="checkbox" name="consent" :aria-invalid="error === 'consent'" />
+          <span>
+            Даю <a href="/consent" target="_blank">согласие на обработку персональных данных</a> в соответствии
+            с <a href="/privacy" target="_blank">политикой</a>
+          </span>
+        </label>
+        <span v-if="error === 'consent'" class="lead__error">{{ errors.consent }}</span>
 
         <!-- ловушка для ботов: людям не видна -->
         <input v-model="form.website" class="lead__trap" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
@@ -215,7 +225,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClick));
   font-weight: 400;
 }
 
-.lead input,
+.lead input:not([type='checkbox']),
 .lead select,
 .lead textarea {
   width: 100%;
@@ -230,6 +240,30 @@ onBeforeUnmount(() => document.removeEventListener('click', onClick));
 
 .lead textarea {
   resize: vertical;
+}
+
+.lead__consent {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 10px;
+  color: var(--color-secondary);
+  font-size: 14px;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.lead__consent input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.lead__consent a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .lead [aria-invalid='true'] {

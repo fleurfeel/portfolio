@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 // Все страницы сайта. Новые страницы добавлять сюда.
-const pages = ['/', '/projects', '/projects/catamarango', '/projects/territoriya-resheniy'];
+const pages = ['/', '/projects', '/projects/catamarango', '/projects/territoriya-resheniy', '/privacy', '/consent'];
 
 for (const path of pages) {
   test.describe(`страница ${path}`, () => {
