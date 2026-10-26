@@ -74,24 +74,34 @@ import LeadForm from './LeadForm.vue';
     transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  /* фиолетовое свечение у края карточки; угол — свой у каждой (--gx, --gy) */
-  .services__card::before {
+  /* фиолетовое свечение у края карточки; угол — свой у каждой (--gx, --gy).
+     При наведении поверх проявляется второе, шире и ярче: меняется только прозрачность, слои всегда во всю карточку */
+  .services__card::before,
+  .services__card::after {
     content: '';
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(
-        circle at var(--gx) var(--gy),
-        color-mix(in srgb, var(--color-accent) 70%, transparent) 0%,
-        color-mix(in srgb, var(--color-accent) 25%, transparent) 30%,
-        transparent 60%
-      );
+    transition: opacity 0.5s ease;
+  }
+
+  .services__card::before {
+    background: radial-gradient(
+      circle at var(--gx) var(--gy),
+      color-mix(in srgb, var(--color-accent) 70%, transparent) 0%,
+      color-mix(in srgb, var(--color-accent) 25%, transparent) 30%,
+      transparent 60%
+    );
     opacity: 0.55;
-    transform: scale(1);
-    transform-origin: var(--gx) var(--gy);
-    transition:
-      opacity 0.5s ease,
-      transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .services__card::after {
+    background: radial-gradient(
+      circle at var(--gx) var(--gy),
+      color-mix(in srgb, var(--color-accent) 80%, transparent) 0%,
+      color-mix(in srgb, var(--color-accent) 35%, transparent) 40%,
+      transparent 80%
+    );
+    opacity: 0;
   }
 
   .services__card:nth-child(4n + 1) {
@@ -114,12 +124,15 @@ import LeadForm from './LeadForm.vue';
     --gy: 55%;
   }
 
+  /* содержимое — над слоями свечения */
   .services__card > :not(.services__num) {
     position: relative;
+    z-index: 1;
   }
 
   .services__num {
     position: absolute;
+    z-index: 1;
     top: var(--pad);
     right: var(--pad);
     color: var(--color-secondary);
@@ -206,9 +219,8 @@ import LeadForm from './LeadForm.vue';
       translate: 0 -10px;
     }
 
-    .services__card:hover::before {
+    .services__card:hover::after {
       opacity: 1;
-      transform: scale(1.25);
     }
   }
 
@@ -403,7 +415,8 @@ import LeadForm from './LeadForm.vue';
 
   @media (prefers-reduced-motion: reduce) {
     .services__card,
-    .services__card::before {
+    .services__card::before,
+    .services__card::after {
       transition: none;
     }
   }
