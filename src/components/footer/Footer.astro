@@ -1,5 +1,5 @@
 ---
-// Футер: тёмная полоса, снизу по центру выглядывает голова маскота. Слева копирайт, справа документы по 152-ФЗ.
+// Футер: светлая (белая) полоса с тонкой линией сверху, снизу по центру выглядывает голова маскота. Слева копирайт, справа документы по 152-ФЗ.
 // Голова выезжает снизу, пока футер появляется на экране (CSS scroll-driven animation; без поддержки
 // или при reduced motion — сразу на месте), и чуть приподнимается при наведении.
 import { Image } from 'astro:assets';
@@ -30,8 +30,9 @@ const docs = [
     z-index: 2; /* над фиксированным 3D-холстом */
     display: grid;
     overflow: hidden;
-    background: var(--color-text);
-    color: color-mix(in srgb, var(--color-bg) 75%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
+    background: var(--color-surface);
+    color: var(--color-secondary);
     font-size: 14px;
     line-height: 1.3;
   }
@@ -47,7 +48,7 @@ const docs = [
   }
 
   .footer a:hover {
-    color: var(--color-bg);
+    color: var(--color-accent);
   }
 
   .footer a:focus-visible {
