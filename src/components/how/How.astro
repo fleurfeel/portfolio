@@ -1,0 +1,374 @@
+---
+// «Как я работаю». Макеты Figma: Laptop 1440 (492:362), Desktop 1920 (492:444); мобильного макета нет.
+// Ноутбук и десктоп: две колонки, шаги с одним номером — в одном ряду. При скролле ряд в центре экрана
+// резкий, а выше и ниже уходят в туман (CSS scroll-driven animations), скролл мягко доводит ряд до центра.
+// Телефон: вместо двух колонок — переключатель «для заказчика / для работодателя» на радиокнопках, без JS.
+// Голова — постер: 3D-голова из манифеста перетекает сюда.
+import { Image } from 'astro:assets';
+import head from '../../assets/manifesto/head.png';
+import { tracks } from '../../data/how';
+---
+
+<section class="how" id="how" aria-labelledby="how-title" data-how>
+  <h2 id="how-title" class="how__title">Как я работаю</h2>
+
+  <div class="how__body">
+    <div class="how__head">
+      <Image
+        src={head}
+        widths={[130, 200, 260, 400]}
+        sizes="(min-width: 1920px) 200px, (min-width: 1024px) 133px, 130px"
+        alt=""
+        loading="lazy"
+        decoding="async"
+        data-mascot-poster="how-head"
+      />
+    </div>
+
+    <!-- переключатель для телефона: колонки показывает/прячет CSS через :has(:checked), без JS -->
+    <div class="how__switch" role="radiogroup" aria-label="Для кого">
+      {
+        tracks.map((track, i) => (
+          <label class="how__option" for={`how-${track.id}`}>
+            <input class="sr-only" type="radio" name="how-track" id={`how-${track.id}`} value={track.id} checked={i === 0} />
+            {track.tag}
+          </label>
+        ))
+      }
+    </div>
+
+
+    {
+      tracks.map((track, side) => (
+        <div class={`how__track how__track--${track.id}`} style={`--side:${side}`}>
+          <div class="how__track-head">
+            <span class="how__tag">{track.tag}</span>
+            <h3 class="how__track-title">{track.title}</h3>
+          </div>
+          <ol class="how__steps">
+            {track.steps.map((step, i) => (
+              <li class="how__step" style={`--row:${i + 2}`}>
+                <h4 class="how__step-title">{step.title}</h4>
+                <p class="how__step-text">{step.text}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .how {
+    position: relative;
+    z-index: 2; /* над фиксированным 3D-холстом */
+    color: var(--color-text);
+    text-align: center;
+  }
+
+  .how__title {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+
+  .how__head {
+    justify-self: center;
+    transition: opacity 0.6s ease;
+  }
+
+  .how__head :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* 3D готов — на месте постера будет 3D-голова */
+  :global([data-stage][data-mascot='ready']) ~ .how .how__head {
+    opacity: 0;
+  }
+
+  .how__track-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .how__tag {
+    padding: 4px 12px;
+    border-radius: 60px;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+  }
+
+  .how__track-title,
+  .how__step-title {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+  }
+
+  .how__step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .how__step-text {
+    line-height: 1.3;
+  }
+
+  /* ---------- телефон (< 1024): переключатель и одна колонка ---------- */
+  @media (max-width: 1023.98px) {
+    .how {
+      padding: 80px 20px;
+    }
+
+    .how__title {
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .how__switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      align-self: stretch;
+      margin: 16px 0 24px;
+      padding: 4px;
+      border: 1px solid var(--color-accent);
+      border-radius: 60px;
+    }
+
+    .how__option {
+      padding: 10px 8px;
+      border-radius: 60px;
+      color: var(--color-accent);
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.04em;
+      cursor: pointer;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+    }
+
+    .how__option:has(:checked) {
+      background: var(--color-accent);
+      color: var(--color-bg);
+    }
+
+    .how__option:has(:focus-visible) {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    .how__body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 24px;
+    }
+
+    .how__head {
+      width: 130px;
+    }
+
+    .how:has(#how-client:checked) .how__track--employer,
+    .how:has(#how-employer:checked) .how__track--client {
+      display: none;
+    }
+
+    .how__tag {
+      display: none; /* роль показывает переключатель */
+    }
+
+    .how__track-title {
+      font-size: 24px;
+    }
+
+    .how__steps {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      margin-top: 32px;
+    }
+
+    .how__step-title {
+      font-size: 20px;
+    }
+
+    .how__step-text {
+      font-size: 16px;
+    }
+  }
+
+  /* ---------- ноутбук и десктоп (≥ 1024): две колонки, ряды выровнены ---------- */
+  @media (min-width: 1024px) {
+    /* 1024–1440: ноутбучный макет × (ширина / 1440) */
+    .how {
+      --k: calc(100vw / 1440);
+      --pad-x: calc(60 * var(--k));
+      --pad-top: calc(120 * var(--k));
+      --title-fs: calc(58 * var(--k));
+      --title-gap: calc(141 * var(--k));
+      --col-w: calc(536 * var(--k));
+      --head-w: calc(133 * var(--k));
+      --track-title-fs: calc(32 * var(--k));
+      --tag-fs: max(14px, calc(20 * var(--k)));
+      --row-gap: calc(81 * var(--k));
+      --first-gap: calc(69 * var(--k));
+      --step-title-fs: max(16px, calc(24 * var(--k)));
+      --step-text-fs: max(14px, calc(16 * var(--k)));
+      --text-w: calc(416 * var(--k));
+
+      padding: var(--pad-top) var(--pad-x) calc(var(--pad-top) * 1.5);
+    }
+
+    .how__title {
+      font-size: var(--title-fs);
+    }
+
+    .how__switch {
+      display: none;
+    }
+
+    .how__body {
+      display: grid;
+      grid-template-columns: var(--col-w) 1fr var(--col-w);
+      row-gap: var(--row-gap);
+      margin-top: var(--title-gap);
+    }
+
+    /* колонки «растворяются» в сетку: заголовки — в 1-й ряд, шаги — по своим рядам */
+    .how__track,
+    .how__steps {
+      display: contents;
+    }
+
+    .how__track-head {
+      grid-row: 1;
+      grid-column: calc(1 + var(--side) * 2);
+      align-self: start;
+      margin-bottom: calc(var(--first-gap) - var(--row-gap));
+    }
+
+    /* голова выше заголовков колонок и выступает над ними: в высоту ряда её не считаем */
+    .how__head {
+      grid-row: 1;
+      grid-column: 2;
+      align-self: center;
+      width: var(--head-w);
+      margin-block: -200px;
+    }
+
+    .how__step {
+      grid-row: var(--row);
+      grid-column: calc(1 + var(--side) * 2);
+    }
+
+    .how__tag {
+      font-size: var(--tag-fs);
+    }
+
+    .how__track-title {
+      font-size: var(--track-title-fs);
+    }
+
+    .how__step-title {
+      font-size: var(--step-title-fs);
+    }
+
+    .how__step-text {
+      max-width: var(--text-w);
+      font-size: var(--step-text-fs);
+    }
+
+    /* скролл мягко доводит ряд до центра экрана */
+    .how__step {
+      scroll-snap-align: center;
+    }
+  }
+
+  /* 1440–1920: плавно к десктопному макету */
+  @media (min-width: 1440px) {
+    .how {
+      --pad-x: calc(60px - 20 * (100vw - 1440px) / 480);
+      --pad-top: calc(120px - 8 * (100vw - 1440px) / 480);
+      --title-fs: calc(58px + 6 * (100vw - 1440px) / 480);
+      --title-gap: 141px;
+      --col-w: calc(536px + 217 * (100vw - 1440px) / 480);
+      --head-w: calc(133px + 67 * (100vw - 1440px) / 480);
+      --track-title-fs: calc(32px + 4 * (100vw - 1440px) / 480);
+      --tag-fs: 20px;
+      --row-gap: calc(81px - 1 * (100vw - 1440px) / 480);
+      --first-gap: calc(69px + 11 * (100vw - 1440px) / 480);
+      --step-title-fs: calc(24px + 4 * (100vw - 1440px) / 480);
+      --step-text-fs: calc(16px + 4 * (100vw - 1440px) / 480);
+      --text-w: calc(416px + 337 * (100vw - 1440px) / 480);
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .how {
+      --pad-x: 40px;
+      --pad-top: 112px;
+      --title-fs: 64px;
+      --col-w: 753px;
+      --head-w: 200px;
+      --track-title-fs: 36px;
+      --row-gap: 80px;
+      --first-gap: 80px;
+      --step-title-fs: 28px;
+      --step-text-fs: 20px;
+      --text-w: 753px;
+    }
+  }
+
+  /* ---------- фокус по центру экрана: выше и ниже — туман (ноутбук и десктоп) ---------- */
+  @supports (animation-timeline: view()) {
+    @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+      .how {
+        /* таймлайн через переменную: иначе минификатор склеит его с шортхендом animation и браузер отбросит */
+        --how-timeline: view();
+      }
+
+      .how__step,
+      .how__track-head {
+        animation: how-focus linear both;
+        animation-timeline: var(--how-timeline);
+        animation-range: cover 0% cover 100%;
+      }
+    }
+  }
+
+  @keyframes how-focus {
+    0%,
+    100% {
+      opacity: 0.15;
+      filter: blur(6px);
+    }
+
+    32%,
+    68% {
+      opacity: 1;
+      filter: blur(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .how__head,
+    .how__option {
+      transition: none;
+    }
+  }
+</style>

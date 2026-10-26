@@ -74,6 +74,9 @@ onMounted(() => {
   // манифест после сцены: там 3D-маскот остаётся одной головой
   const manifesto = document.querySelector<HTMLElement>('[data-manifesto]');
   const headPoster = manifesto?.querySelector<HTMLElement>('[data-mascot-poster="head"]') ?? null;
+  // «Как я работаю»: голова из манифеста перетекает сюда
+  const how = document.querySelector<HTMLElement>('[data-how]');
+  const howHeadPoster = how?.querySelector<HTMLElement>('[data-mascot-poster="how-head"]') ?? null;
 
   const cards = [...stage.querySelectorAll<HTMLElement>('[data-card]')];
   const infos = [...stage.querySelectorAll<HTMLElement>('[data-info]')];
@@ -179,9 +182,17 @@ onMounted(() => {
 
   // рамка PNG-головы манифеста в документе (по offset*, без анимации появления)
   let headDoc = headPoster ? offsetRect(headPoster, document.body) : null;
+  let howHeadDoc = howHeadPoster ? offsetRect(howHeadPoster, document.body) : null;
   const measureHead = () => {
     headDoc = headPoster ? offsetRect(headPoster, document.body) : null;
+    howHeadDoc = howHeadPoster ? offsetRect(howHeadPoster, document.body) : null;
   };
+  const mixRect = (a: { left: number; top: number; width: number; height: number }, b: typeof a, m: number) => ({
+    left: a.left + (b.left - a.left) * m,
+    top: a.top + (b.top - a.top) * m,
+    width: a.width + (b.width - a.width) * m,
+    height: a.height + (b.height - a.height) * m,
+  });
 
   const ro = new ResizeObserver(() => {
     sizeTail();
@@ -240,11 +251,17 @@ onMounted(() => {
         getTransition: () => transition,
         getDynamic: () => {
           const pinTop = pin.getBoundingClientRect().top;
-          const head = headDoc ? { ...headDoc, top: headDoc.top - scrollY } : null;
+          let head = headDoc ? { ...headDoc, top: headDoc.top - scrollY } : null;
           const headMix = manifesto ? headProgress(manifesto.getBoundingClientRect().top, innerHeight) : 0;
+          if (head && howHeadDoc) {
+            // голова манифеста → голова «Как я работаю»: доходит, когда та поднялась примерно на 60% экрана
+            const howTop = howHeadDoc.top - scrollY;
+            const m = headProgress(howTop - innerHeight * 0.45, innerHeight);
+            if (m > 0) head = mixRect(head, { ...howHeadDoc, top: howTop }, m);
+          }
           return { pinTop, head, headMix };
         },
-        observe: manifesto ? [pin, manifesto] : [pin],
+        observe: [pin, manifesto, how].filter((el): el is HTMLElement => !!el),
         reducedMotion,
         trackCursor: shouldTrackCursor({ canHover, reducedMotion }),
         onReady: () => {
