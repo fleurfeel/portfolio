@@ -195,6 +195,37 @@ import { faq } from '../../data/faq';
     }
   }
 
+  /* плавно разъезжается и съезжается: анимируется высота содержимого details (согласованное исключение
+     из правила «только transform/opacity»). Где ::details-content или interpolate-size нет — открывается сразу */
+  @supports selector(::details-content) and (interpolate-size: allow-keywords) {
+    @media (prefers-reduced-motion: no-preference) {
+      .faq {
+        interpolate-size: allow-keywords;
+      }
+
+      .faq__item::details-content {
+        block-size: 0;
+        overflow-y: clip;
+        transition:
+          block-size 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+          content-visibility 0.45s allow-discrete;
+      }
+
+      .faq__item[open]::details-content {
+        block-size: auto;
+      }
+
+      /* при закрытии ответ гаснет, пока карточка съезжается */
+      .faq__answer {
+        transition: opacity 0.3s ease;
+      }
+
+      .faq__item:not([open]) .faq__answer {
+        opacity: 0;
+      }
+    }
+  }
+
   /* ---------- телефон (< 1024): одной колонкой ---------- */
   @media (max-width: 1023.98px) {
     .faq {
