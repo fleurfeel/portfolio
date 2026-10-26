@@ -16,7 +16,10 @@ const n = tracks[0]!.steps.length;
 
 <section class="how" id="how" aria-labelledby="how-title" data-how style={`--n:${n}`}>
   <div class="how__pin">
-  <h2 id="how-title" class="how__title">Как я работаю</h2>
+  <!-- слова по отдельности: пролетая сюда, 3D-голова раздвигает их (Stage.vue, data-part) -->
+  <h2 id="how-title" class="how__title">
+    {'Как я работаю'.split(' ').map((word) => <><span class="how__word" data-part>{word}</span>{' '}</>)}
+  </h2>
 
   <div class="how__body">
     <div class="how__head">
@@ -78,9 +81,14 @@ const n = tracks[0]!.steps.length;
 <style>
   .how {
     position: relative;
+    overflow-x: clip; /* раздвинутый головой заголовок не даёт горизонтальной прокрутки; sticky не ломает */
     z-index: 2; /* над фиксированным 3D-холстом */
     color: var(--color-text);
     text-align: center;
+  }
+
+  .how__word {
+    display: inline-block;
   }
 
   .how__title {
