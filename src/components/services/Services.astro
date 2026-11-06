@@ -1,35 +1,69 @@
 ---
-// «Услуги и стоимость». Вайрфрейм Figma: 291:4969 (четыре карточки 424 × 535 на десктопе 1920), оформление — в стилистике сайта.
-// Ноутбук и десктоп: карточки лежат колодой по центру и при прокрутке «раздаются» по своим местам
-// (CSS scroll-driven animation по общей view-timeline сетки); от 1440 — в один ряд, 1024–1440 — сеткой 2 × 2.
-// Карточки белые, у края — мягкое фиолетовое свечение (у каждой в своём углу); при наведении оно ярче и карточка приподнимается.
+// «Услуги и стоимость»: список строк на фоне сайта. Слева название, в центре теги и описание, справа срок, цена и кнопка заявки.
+// Появление по скроллу (CSS scroll-driven, у каждой строки своя view-timeline): линия прочерчивается слева направо,
+// слова названия переворачиваются, как в манифесте, теги раздаются веером из одной точки, остальное всплывает.
+// При наведении на строку: фиолетовое свечение, название сдвигается, теги по очереди становятся фиолетовыми,
+// кнопка заливается и надпись прокатывается. Меняются только transform и opacity.
 // Кнопка «Оставить заявку» открывает форму (остров LeadForm.vue), услуга в ней уже выбрана.
-// Телефон: горизонтальная карусель со scroll-snap; карточка у края чуть меньше и бледнее.
-// Без поддержки scroll-driven animations или при reduced motion — карточки сразу на местах.
+// Ноутбук и десктоп (≥ 1024): три колонки. Планшет (640–1023): описание и цена рядом. Телефон: всё в один столбец.
+// Без поддержки scroll-driven animations или при reduced motion — всё сразу на местах.
 import { services } from '../../data/services';
 import LeadForm from './LeadForm.vue';
+
+const titleWords = 'Услуги и стоимость'.split(' ');
 ---
 
 <section class="services" id="services" aria-labelledby="services-title">
-  <h2 id="services-title" class="services__title">Услуги и стоимость</h2>
+  <div class="services__head">
+    <h2 id="services-title" class="services__title">
+      {
+        titleWords.map((word, i) => (
+          <>
+            <span class="services__word" style={`--s:${i}`}>
+              {word}
+            </span>{' '}
+          </>
+        ))
+      }
+    </h2>
+    <p class="services__lead">Цена зависит от числа экранов и сложности логики. Точную сумму называю после брифа, и дальше она не растёт без вашего согласия.</p>
+  </div>
 
-  <ul class="services__grid" tabindex="0" aria-label="Услуги — листайте вбок">
+  <ul class="services__list">
     {
       services.map((service, i) => (
-        <li class="services__card" style={`--i:${i}`}>
-          <span class="services__num" aria-hidden="true">
-            {String(i + 1).padStart(2, '0')}
-          </span>
-          <h3 class="services__name">{service.title}</h3>
+        <li class="services__row">
+          <span class="services__line" aria-hidden="true" />
+          <div class="services__name-wrap">
+            <span class="services__num" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <h3 class="services__name">
+              {service.title.split(' ').map((word, w) => (
+                <>
+                  <span class="services__word" style={`--s:${w + 1}`}>
+                    {word}
+                  </span>{' '}
+                </>
+              ))}
+            </h3>
+          </div>
+          <ul class="services__tags">
+            {service.tags.map((tag, t) => (
+              <li class="services__tag" style={`--t:${t}`}>
+                <span>{tag}</span>
+              </li>
+            ))}
+          </ul>
           <p class="services__text">{service.text}</p>
-          <p class="services__term">
-            <span class="services__term-label">Срок</span>
-            {service.term}
-          </p>
-          <div class="services__bottom">
+          <div class="services__side">
+            <p class="services__term">Срок: {service.term}</p>
             <p class="services__price">{service.price}</p>
             <button class="services__cta" type="button" data-lead={service.title}>
-              Оставить заявку
+              <span class="services__cta-roll">
+                <span>Оставить заявку</span>
+                <span aria-hidden="true">Оставить заявку</span>
+              </span>
             </button>
           </div>
         </li>
@@ -52,140 +86,132 @@ import LeadForm from './LeadForm.vue';
     font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.01em;
-    text-align: center;
     text-transform: uppercase;
+    perspective: 800px;
   }
 
-  .services__grid:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 4px;
+  .services__word {
+    display: inline-block;
+    transform-origin: 50% 100%;
   }
 
-  .services__card {
+  .services__lead {
+    font-size: var(--text-fs);
+    line-height: 1.3;
+    color: var(--color-secondary);
+  }
+
+  .services__row {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
-    border-radius: 30px;
-    background: var(--color-surface);
-    box-shadow: 0 24px 48px -24px color-mix(in srgb, var(--color-accent) 25%, transparent);
-    color: var(--color-text);
-    transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+    display: grid;
   }
 
-  /* фиолетовое свечение у края карточки; угол — свой у каждой (--gx, --gy).
-     При наведении поверх проявляется второе, шире и ярче: меняется только прозрачность, слои всегда во всю карточку */
-  .services__card::before,
-  .services__card::after {
+  /* свечение строки при наведении — выходит за поля до края экрана и гаснет до верха и низа строки */
+  .services__row::before {
     content: '';
     position: absolute;
-    inset: 0;
+    z-index: -1;
+    inset: 0 calc(var(--pad-x) * -1);
+    background: radial-gradient(
+      55% 50% at 100% 50%,
+      color-mix(in srgb, var(--color-accent) 45%, transparent) 0%,
+      color-mix(in srgb, var(--color-accent) 15%, transparent) 55%,
+      transparent 100%
+    );
+    opacity: 0;
     transition: opacity 0.5s ease;
   }
 
-  .services__card::before {
-    background: radial-gradient(
-      circle at var(--gx) var(--gy),
-      color-mix(in srgb, var(--color-accent) 70%, transparent) 0%,
-      color-mix(in srgb, var(--color-accent) 25%, transparent) 30%,
-      transparent 60%
-    );
-    opacity: 0.55;
+  .services__line,
+  .services__line::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 1px;
+    transform-origin: 0 50%;
   }
 
-  .services__card::after {
-    background: radial-gradient(
-      circle at var(--gx) var(--gy),
-      color-mix(in srgb, var(--color-accent) 80%, transparent) 0%,
-      color-mix(in srgb, var(--color-accent) 35%, transparent) 40%,
-      transparent 80%
-    );
-    opacity: 0;
+  .services__line {
+    background: color-mix(in srgb, var(--color-text) 18%, transparent);
   }
 
-  .services__card:nth-child(4n + 1) {
-    --gx: 115%;
-    --gy: 105%;
+  /* при наведении линия прочерчивается фиолетовым поверх серой */
+  .services__line::after {
+    content: '';
+    background: var(--color-accent);
+    transform: scaleX(0);
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  .services__card:nth-child(4n + 2) {
-    --gx: 110%;
-    --gy: 0%;
-  }
-
-  .services__card:nth-child(4n + 3) {
-    --gx: -10%;
-    --gy: 100%;
-  }
-
-  .services__card:nth-child(4n + 4) {
-    --gx: 115%;
-    --gy: 55%;
-  }
-
-  /* содержимое — над слоями свечения */
-  .services__card > :not(.services__num) {
-    position: relative;
-    z-index: 1;
+  .services__name-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
   }
 
   .services__num {
-    position: absolute;
-    z-index: 1;
-    top: var(--pad);
-    right: var(--pad);
+    flex: none;
     color: var(--color-secondary);
-    font-size: var(--term-fs);
+    font-size: var(--small-fs);
     font-weight: 600;
     line-height: 1.2;
   }
 
   .services__name {
-    padding-right: 2.5em;
     font-size: var(--name-fs);
     font-weight: 600;
     line-height: 1.1;
     letter-spacing: -0.01em;
+    text-transform: uppercase;
+    perspective: 800px;
+    transition: translate 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .services__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .services__tag {
+    position: relative;
+    overflow: hidden;
+    padding: 8px 16px;
+    border-radius: 60px;
+    background: var(--color-text);
+    color: var(--color-surface);
+    font-size: var(--small-fs);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .services__tag::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-accent);
+    opacity: 0;
+    transition: opacity 0.35s ease calc(var(--t) * 50ms);
+  }
+
+  .services__tag span {
+    position: relative;
   }
 
   .services__text {
-    margin-top: var(--text-gap);
-    color: var(--color-secondary);
     font-size: var(--text-fs);
     line-height: 1.3;
   }
 
   .services__term {
-    display: flex;
-    align-items: center;
-    align-self: flex-start;
-    gap: 8px;
-    margin-top: var(--text-gap);
-    padding: 4px 12px 4px 4px;
-    border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
-    border-radius: 60px;
-    font-size: var(--term-fs);
-    font-weight: 600;
+    color: var(--color-secondary);
+    font-size: var(--text-fs);
     line-height: 1.2;
   }
 
-  .services__term-label {
-    padding: 2px 10px;
-    border-radius: 60px;
-    background: var(--color-accent);
-    color: var(--color-surface);
-  }
-
-  .services__bottom {
-    display: flex;
-    flex-direction: column;
-    gap: var(--text-gap);
-    margin-top: auto;
-    padding-top: var(--text-gap);
-  }
-
   .services__price {
+    margin-top: 4px;
     font-size: var(--price-fs);
     font-weight: 600;
     line-height: 1.1;
@@ -193,20 +219,49 @@ import LeadForm from './LeadForm.vue';
   }
 
   .services__cta {
-    padding: 16px 24px;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px 24px;
+    border: 1px solid var(--color-text);
     border-radius: 42px;
-    background: var(--color-text);
-    color: var(--color-surface);
+    color: var(--color-text);
     font: inherit;
     font-size: var(--cta-fs);
     font-weight: 600;
     line-height: 1.2;
     cursor: pointer;
-    transition: opacity 0.2s ease;
   }
 
-  .services__cta:hover {
-    opacity: 0.85;
+  /* заливка въезжает слева */
+  .services__cta::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: var(--color-accent);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* надпись в два слоя: тёмная уезжает вверх, белая приходит снизу */
+  .services__cta-roll {
+    position: relative;
+    display: block;
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .services__cta-roll > span {
+    display: block;
+  }
+
+  .services__cta-roll > span + span {
+    position: absolute;
+    top: calc(100% + 16px);
+    right: 0;
+    left: 0;
+    color: var(--color-surface);
   }
 
   .services__cta:focus-visible {
@@ -215,197 +270,238 @@ import LeadForm from './LeadForm.vue';
   }
 
   @media (hover: hover) {
-    .services__card:hover {
-      translate: 0 -10px;
-    }
-
-    .services__card:hover::after {
+    .services__row:hover::before {
       opacity: 1;
     }
-  }
 
-  /* ---------- телефон (< 1024): карусель ---------- */
-  @media (max-width: 1023.98px) {
-    .services {
-      --pad: 24px;
-      --name-fs: 26px;
-      --text-fs: 16px;
-      --text-gap: 16px;
-      --term-fs: 14px;
-      --price-fs: 28px;
-      --cta-fs: 16px;
-
-      padding: 80px 0;
-    }
-
-    .services__title {
-      padding-inline: 20px;
-      font-size: 32px;
-    }
-
-    .services__grid {
-      display: flex;
-      gap: 12px;
-      margin-top: 40px;
-      padding: 12px 20px;
-      overflow-x: auto;
-      overscroll-behavior-x: contain;
-      scroll-snap-type: x mandatory;
-      scroll-padding-inline: 20px;
-      scrollbar-width: none;
-    }
-
-    .services__grid::-webkit-scrollbar {
-      display: none;
-    }
-
-    .services__card {
-      flex: 0 0 min(82vw, 380px);
-      min-height: 440px;
-      padding: var(--pad);
-      scroll-snap-align: start;
-    }
-  }
-
-  /* карточка у края карусели чуть меньше и бледнее (таймлайн — через переменную: минификатор иначе ломает animation-timeline) */
-  @supports (animation-timeline: view()) {
-    @media (max-width: 1023.98px) and (prefers-reduced-motion: no-preference) {
-      .services__card {
-        --peek-tl: view(inline);
-
-        animation: services-peek linear both;
-        animation-timeline: var(--peek-tl);
-      }
-    }
-  }
-
-  @keyframes services-peek {
-    0% {
-      opacity: 0.6;
-      transform: scale(0.9);
-    }
-
-    35%,
-    65% {
-      opacity: 1;
+    .services__row:hover .services__line::after {
       transform: none;
     }
 
-    100% {
-      opacity: 0.6;
-      transform: scale(0.9);
+    .services__row:hover .services__name {
+      translate: 16px 0;
+    }
+
+    .services__row:hover .services__tag::before {
+      opacity: 1;
+    }
+
+    .services__cta:hover::before {
+      transform: none;
+    }
+
+    .services__cta:hover .services__cta-roll {
+      transform: translateY(calc(-100% - 16px));
     }
   }
 
-  /* ---------- ноутбук и десктоп (≥ 1024) ---------- */
+  /* ---------- телефон (< 640): всё в один столбец ---------- */
+  @media (max-width: 1023.98px) {
+    .services {
+      --pad-x: 20px;
+      --name-fs: 30px;
+      --text-fs: 17px;
+      --small-fs: 14px;
+      --price-fs: 28px;
+      --cta-fs: 16px;
+
+      padding: 80px var(--pad-x);
+    }
+
+    .services__head {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .services__title {
+      font-size: 32px;
+    }
+
+    .services__row {
+      gap: 20px;
+      padding-block: 28px 36px;
+    }
+
+    .services__side {
+      margin-top: 4px;
+    }
+  }
+
+  /* ---------- планшет (640–1023): описание и цена рядом ---------- */
+  @media (min-width: 640px) and (max-width: 1023.98px) {
+    .services {
+      --pad-x: 40px;
+      --name-fs: 36px;
+    }
+
+    .services__title {
+      font-size: 44px;
+    }
+
+    .services__row {
+      grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
+      grid-template-areas:
+        'name name'
+        'tags tags'
+        'text side';
+      column-gap: 40px;
+    }
+
+    .services__name-wrap {
+      grid-area: name;
+    }
+
+    .services__tags {
+      grid-area: tags;
+    }
+
+    .services__text {
+      grid-area: text;
+    }
+
+    .services__side {
+      grid-area: side;
+      margin-top: 0;
+    }
+  }
+
+  /* ---------- ноутбук и десктоп (≥ 1024): три колонки, размеры ноутбучного макета × (ширина / 1440) ---------- */
   @media (min-width: 1024px) {
-    /* 1024–1440: сетка 2 × 2, размеры ноутбучного макета × (ширина / 1440) */
     .services {
       --k: calc(100vw / 1440);
       --pad-x: calc(60 * var(--k));
       --pad-top: calc(120 * var(--k));
       --title-fs: calc(58 * var(--k));
-      --gap: 24px;
-      --pad: 30px;
-      --name-fs: 32px;
+      --name-fs: calc(44 * var(--k));
       --text-fs: 18px;
-      --text-gap: 20px;
-      --term-fs: 16px;
-      --price-fs: 36px;
+      --small-fs: 15px;
+      --price-fs: max(24px, calc(30 * var(--k)));
       --cta-fs: 16px;
+      --cols: minmax(0, 1fr) minmax(0, 0.66fr) minmax(200px, 0.34fr);
+      --col-gap: calc(32 * var(--k));
 
       padding: calc(var(--pad-top) * 0.5) var(--pad-x) var(--pad-top);
+    }
+
+    .services__head {
+      display: grid;
+      grid-template-columns: var(--cols);
+      column-gap: var(--col-gap);
+      align-items: end;
+      margin-bottom: calc(64 * var(--k));
     }
 
     .services__title {
       font-size: var(--title-fs);
     }
 
-    .services__grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: var(--gap);
-      margin-top: calc(var(--pad-top) * 0.75);
+    .services__lead {
+      grid-column: 2 / 4;
+      max-width: 34em;
     }
 
-    .services__card {
-      /* для «раздачи»: место карточки в сетке и сдвиг до центра колоды */
-      --col: calc(var(--i) - 2 * round(down, var(--i) / 2, 1));
-      --row: round(down, var(--i) / 2, 1);
-      --dx: calc((0.5 - var(--col)) * (100% + var(--gap)));
-      --dy: calc((0.5 - var(--row)) * (100% + var(--gap)));
-      /* сетка 2 × 2 выше экрана: раздаём, пока заезжает первый ряд */
-      --deal-end: entry 50%;
-
-      min-height: 400px;
-      padding: var(--pad);
-    }
-  }
-
-  /* 1440–1920: один ряд из четырёх, плавно к десктопному вайрфрейму (карточка 424 × 535) */
-  @media (min-width: 1440px) {
-    .services {
-      --pad-x: calc(60px - 20 * (100vw - 1440px) / 480);
-      --pad-top: calc(120px - 8 * (100vw - 1440px) / 480);
-      --title-fs: calc(58px + 6 * (100vw - 1440px) / 480);
-      --pad: calc(24px + 6 * (100vw - 1440px) / 480);
-      --name-fs: calc(26px + 6 * (100vw - 1440px) / 480);
-      --text-fs: calc(16px + 4 * (100vw - 1440px) / 480);
-      --text-gap: calc(16px + 4 * (100vw - 1440px) / 480);
-      --term-fs: calc(14px + 2 * (100vw - 1440px) / 480);
-      --price-fs: calc(28px + 8 * (100vw - 1440px) / 480);
+    .services__row {
+      grid-template-columns: var(--cols);
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        'name tags tags'
+        'name text side';
+      column-gap: var(--col-gap);
+      row-gap: calc(72 * var(--k));
+      padding-block: calc(36 * var(--k));
     }
 
-    .services__grid {
-      grid-template-columns: repeat(4, minmax(0, 424px));
-      justify-content: center;
+    .services__name-wrap {
+      grid-area: name;
     }
 
-    .services__card {
-      --dx: calc((1.5 - var(--i)) * (100% + var(--gap)));
-      --dy: 0px;
-      --deal-end: entry 90%;
+    .services__tags {
+      grid-area: tags;
+      max-width: 620px;
+    }
 
-      min-height: auto; /* не меньше содержимого, даже если пропорция тесна */
-      aspect-ratio: 424 / 535;
+    .services__text {
+      grid-area: text;
+    }
+
+    .services__side {
+      grid-area: side;
     }
   }
 
   @media (min-width: 1920px) {
     .services {
-      --pad-x: 40px;
+      --k: calc(1920px / 1440);
+      --pad-x: 55px;
       --pad-top: 112px;
       --title-fs: 64px;
-      --pad: 30px;
-      --name-fs: 32px;
       --text-fs: 20px;
-      --text-gap: 20px;
-      --term-fs: 16px;
-      --price-fs: 36px;
+      --small-fs: 16px;
     }
   }
 
-  /* «раздача»: пока сетка заезжает на экран, карточки лежат веером колодой по центру и расходятся по местам */
+  /* появление строки по скроллу. Таймлайн — через переменную: минификатор иначе ломает animation-timeline.
+     cover 0% — верх строки у нижнего края экрана: всё успевает проиграть, пока строка на виду */
   @supports (animation-timeline: view()) {
-    @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-      .services__grid {
-        view-timeline-name: --services-deal;
+    @media (prefers-reduced-motion: no-preference) {
+      .services__head,
+      .services__row {
+        view-timeline-name: --services-row;
       }
 
-      .services__card {
-        --deal-tl: --services-deal;
+      .services__line,
+      .services__word,
+      .services__tag,
+      .services__text,
+      .services__side,
+      .services__lead,
+      .services__num {
+        --row-tl: --services-row;
 
-        z-index: calc(4 - var(--i));
-        animation: services-deal linear both;
-        animation-timeline: var(--deal-tl);
-        animation-range: entry 0% var(--deal-end); /* сетка заехала на экран — карточки на местах */
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: var(--row-tl);
+      }
+
+      .services__line {
+        animation-name: services-line;
+        animation-range: cover 0% cover 26%;
+      }
+
+      .services__num {
+        animation-name: services-rise;
+        animation-range: cover 2% cover 12%;
+      }
+
+      /* --s: номер слова */
+      .services__word {
+        animation-name: services-flip;
+        animation-range: cover calc(2% + var(--s) * 3%) cover calc(16% + var(--s) * 3%);
+      }
+
+      /* --t: номер тега, следующий вылетает позже и из более дальней точки */
+      .services__tag {
+        animation-name: services-deal;
+        animation-range: cover calc(6% + var(--t) * 2.5%) cover calc(20% + var(--t) * 2.5%);
+      }
+
+      .services__lead,
+      .services__text {
+        animation-name: services-rise;
+        animation-range: cover 12% cover 26%;
+      }
+
+      .services__side {
+        animation-name: services-rise;
+        animation-range: cover 16% cover 30%;
       }
     }
   }
 
-  @keyframes services-deal {
+  @keyframes services-line {
     from {
-      transform: translate(var(--dx), var(--dy)) rotate(calc((var(--i) - 1.5) * 5deg)) scale(0.92);
+      transform: scaleX(0);
     }
 
     to {
@@ -413,10 +509,49 @@ import LeadForm from './LeadForm.vue';
     }
   }
 
+  @keyframes services-flip {
+    from {
+      opacity: 0;
+      transform: translateY(0.6em) rotateX(-95deg);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes services-deal {
+    from {
+      opacity: 0;
+      transform: translateX(calc((var(--t) + 1) * -36px)) rotate(calc((var(--t) - 2) * 6deg)) scale(0.8);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes services-rise {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .services__card,
-    .services__card::before,
-    .services__card::after {
+    .services__row::before,
+    .services__line::after,
+    .services__name,
+    .services__tag::before,
+    .services__cta::before,
+    .services__cta-roll {
       transition: none;
     }
   }

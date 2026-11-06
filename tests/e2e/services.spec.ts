@@ -1,20 +1,20 @@
 import { expect, test } from '@playwright/test';
 
-/** Прокрутить так, чтобы верх сетки карточек был на доле f высоты экрана сверху. */
-async function scrollGrid(page: import('@playwright/test').Page, f: number) {
+/** Прокрутить так, чтобы верх первой строки был на доле f высоты экрана сверху. */
+async function scrollRow(page: import('@playwright/test').Page, f: number) {
   await page.evaluate(async (f) => {
     document.documentElement.style.scrollSnapType = 'none';
-    const g = document.querySelector('.services__grid')!.getBoundingClientRect();
-    scrollTo(0, g.top + scrollY - innerHeight * f);
+    const r = document.querySelector('.services__row')!.getBoundingClientRect();
+    scrollTo(0, r.top + scrollY - innerHeight * f);
     // анимация по скроллу обновляется со следующим кадром
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   }, f);
 }
 
-/** Сдвиг первой карточки: none или единичная матрица — карточка на своём месте. */
-const firstCardTransform = (page: import('@playwright/test').Page) =>
+/** Сдвиг первого тега: none или единичная матрица — тег на своём месте. */
+const firstTagTransform = (page: import('@playwright/test').Page) =>
   page
-    .locator('.services__card')
+    .locator('.services__tag')
     .first()
     .evaluate((el) => {
       const t = getComputedStyle(el).transform;
@@ -22,64 +22,82 @@ const firstCardTransform = (page: import('@playwright/test').Page) =>
     });
 
 test.describe('услуги и стоимость', () => {
-  test('четыре карточки с ценой и сроком, ссылка «Услуги» ведёт сюда', async ({ page }) => {
+  test('четыре услуги с ценой и сроком, ссылка «Услуги» ведёт сюда', async ({ page }) => {
     await page.goto('/');
     const services = page.locator('#services');
     await expect(services.getByRole('heading', { level: 2 })).toHaveText('Услуги и стоимость');
-    await expect(services.locator('.services__card')).toHaveCount(4);
+    await expect(services.locator('.services__row')).toHaveCount(4);
     await expect(services.getByText('от 50.000 рублей')).toBeAttached();
     await expect(services.getByText('после обсуждения')).toBeAttached();
     await expect(page.locator('a[href="#services"]').first()).toBeAttached();
   });
 
-  test('десктоп: карточки раздаются из колоды по скроллу и встают в один ряд', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'раздача — на ноутбуке и десктопе');
+  test('у каждой услуги теги, описание, срок, цена и кнопка', async ({ page }) => {
+    await page.goto('/');
+    const rows = page.locator('.services__row');
+    for (let i = 0; i < 4; i++) {
+      const row = rows.nth(i);
+      expect(await row.locator('.services__tag').count()).toBeGreaterThanOrEqual(3);
+      await expect(row.locator('.services__text')).not.toBeEmpty();
+      await expect(row.locator('.services__term')).toContainText('Срок');
+      await expect(row.getByRole('button', { name: 'Оставить заявку', exact: true })).toBeAttached();
+    }
+  });
+
+  test('десктоп: название, теги и цена идут тремя колонками, описание под тегами', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'три колонки — на ноутбуке и десктопе');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    const box = (s: string) => page.locator('.services__row').first().locator(s).boundingBox();
+    const [name, tags, text, side] = await Promise.all(['.services__name-wrap', '.services__tags', '.services__text', '.services__side'].map(box));
+    expect(tags!.x).toBeGreaterThan(name!.x + name!.width);
+    expect(side!.x).toBeGreaterThan(text!.x + text!.width);
+    expect(text!.x).toBe(tags!.x);
+    expect(text!.y).toBeGreaterThan(tags!.y + tags!.height);
+  });
+
+  test('теги раздаются по скроллу и встают на места', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/', { waitUntil: 'networkidle' });
 
-    await scrollGrid(page, 0.8);
-    expect(await firstCardTransform(page)).not.toBe('none');
+    await scrollRow(page, 0.98);
+    expect(await firstTagTransform(page)).not.toBe('none');
 
-    await scrollGrid(page, 0.2);
-    expect(await firstCardTransform(page)).toBe('none');
-    const tops = await page.locator('.services__card').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
-    expect(new Set(tops).size).toBe(1);
+    await scrollRow(page, 0.3);
+    expect(await firstTagTransform(page)).toBe('none');
   });
 
-  test('телефон: карточки листаются вбок, страница не скроллится по горизонтали', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile', 'карусель — на телефоне');
+  test('телефон: строки в один столбец, страница не скроллится по горизонтали', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'один столбец — на телефоне');
     await page.goto('/');
-    const grid = page.locator('.services__grid');
-    const { scroll, client, snap } = await grid.evaluate((el) => ({
-      scroll: el.scrollWidth,
-      client: el.clientWidth,
-      snap: getComputedStyle(el).scrollSnapType,
-    }));
-    expect(scroll).toBeGreaterThan(client * 2);
-    expect(snap).toContain('x');
+    const row = page.locator('.services__row').first();
+    const tags = await row.locator('.services__tags').boundingBox();
+    const text = await row.locator('.services__text').boundingBox();
+    const side = await row.locator('.services__side').boundingBox();
+    expect(text!.y).toBeGreaterThan(tags!.y);
+    expect(side!.y).toBeGreaterThan(text!.y);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
   });
 
-  test('prefers-reduced-motion: карточки сразу на местах', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'раздача — на ноутбуке и десктопе');
+  test('prefers-reduced-motion: всё сразу на местах', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
-    await scrollGrid(page, 0.8);
-    expect(await firstCardTransform(page)).toBe('none');
+    await scrollRow(page, 0.98);
+    expect(await firstTagTransform(page)).toBe('none');
   });
 
-  test('кнопка в карточке открывает заявку с выбранной услугой; заявка уходит на /api/lead', async ({ page }) => {
+  test('кнопка в строке открывает заявку с выбранной услугой; заявка уходит на /api/lead', async ({ page }) => {
     let sent: Record<string, string> | null = null;
     await page.route('**/api/lead', async (route) => {
       sent = route.request().postDataJSON();
       await route.fulfill({ json: { ok: true } });
     });
     await page.goto('/', { waitUntil: 'networkidle' });
-    const card = page.locator('.services__card').first();
+    const row = page.locator('.services__row').first();
     // остров формы подключается в простое браузера — ждём, пока кнопка начнёт открывать окно
     const dialog = page.getByRole('dialog');
     await expect(async () => {
-      await card.getByRole('button', { name: 'Оставить заявку' }).click();
+      await row.getByRole('button', { name: 'Оставить заявку' }).click();
       await expect(dialog).toBeVisible({ timeout: 500 });
     }).toPass();
     await expect(dialog.getByLabel('Услуга')).toHaveValue('Лендинг');
@@ -110,7 +128,7 @@ test.describe('услуги и стоимость', () => {
     await page.goto('/', { waitUntil: 'networkidle' });
     const dialog = page.getByRole('dialog');
     await expect(async () => {
-      await page.locator('.services__card').last().getByRole('button', { name: 'Оставить заявку' }).click();
+      await page.locator('.services__row').last().getByRole('button', { name: 'Оставить заявку' }).click();
       await expect(dialog).toBeVisible({ timeout: 500 });
     }).toPass();
     await dialog.getByLabel('Имя').fill('Анна');
