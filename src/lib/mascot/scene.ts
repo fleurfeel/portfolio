@@ -83,6 +83,8 @@ export interface MascotSceneOptions {
   modelUrl: string;
   /** размеры файлов моделей в байтах (считаются при сборке) — знаменатель для прогресса */
   modelSizes: Record<string, number>;
+  /** хеши содержимого файлов (считаются при сборке): новая версия модели — новый адрес, мимо кэша браузера */
+  modelVersions: Record<string, string>;
   /** прогресс загрузки: models — доля скачанных байт, init — подготовка GPU (0…1) */
   onProgress?: (p: { models: number; init: number }) => void;
   /** слой, в который встаёт canvas; по его размеру считается кадр */
@@ -160,7 +162,7 @@ interface Logo {
   kick: number;
 }
 
-export async function createMascotScene({ modelUrl, modelSizes, onProgress, container, measure, getDynamic, observe, getTransition, trackCursor, reducedMotion, onReady }: MascotSceneOptions) {
+export async function createMascotScene({ modelUrl, modelSizes, modelVersions, onProgress, container, measure, getDynamic, observe, getTransition, trackCursor, reducedMotion, onReady }: MascotSceneOptions) {
   const renderer = getRenderer();
   const canvas = renderer.domElement;
   canvas.style.cssText = 'display:block;width:100%;height:100%;touch-action:pan-y';
@@ -174,7 +176,7 @@ export async function createMascotScene({ modelUrl, modelSizes, onProgress, cont
   let initDone = 0;
   const report = () => onProgress?.({ models: bytesFraction(loaded, totals), init: initDone });
   const load = (url: string, i: number) =>
-    fetchWithProgress(url, (n) => {
+    fetchWithProgress(`${url}?v=${modelVersions[url] ?? ''}`, (n) => {
       loaded[i] = n;
       report();
     })

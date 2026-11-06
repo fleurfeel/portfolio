@@ -4,7 +4,8 @@
 // «Обо мне» на телефоне выше экрана: после сцены sticky-экран уезжает вверх вместе с ней,
 // а «хвост» под сценой даёт место её продолжению (высоту ставит Stage.vue).
 // Без JS (до гидрации Stage.vue) экраны стоят друг под другом обычным потоком.
-import { readdirSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { projects } from '../../data/projects';
 import { STAGE, aboutStart } from '../../lib/stage/math';
@@ -22,6 +23,10 @@ const modelSizes = Object.fromEntries(
     .filter((f) => f.endsWith('.glb'))
     .map((f) => [`/models/${f}`, statSync(join(modelsDir, f)).size]),
 );
+// Хеш содержимого для адреса модели: браузер кэширует /models/* на неделю, а имя файла при замене не меняется
+const modelVersions = Object.fromEntries(
+  Object.keys(modelSizes).map((url) => [url, createHash('sha1').update(readFileSync(join(modelsDir, url.slice('/models/'.length)))).digest('hex').slice(0, 8)]),
+);
 const end = aboutStart(n) + STAGE.about;
 const snaps = [0, ...projects.map((_, i) => STAGE.transition + STAGE.step * i), end];
 ---
@@ -35,7 +40,7 @@ const snaps = [0, ...projects.map((_, i) => STAGE.transition + STAGE.step * i), 
     <div class="stage__layer" data-layer="hero"><Hero /></div>
     <div class="stage__layer" data-layer="projects"><Projects /></div>
     <div class="stage__layer stage__layer--about" data-layer="about"><About /></div>
-    <Stage client:idle modelSizes={modelSizes} />
+    <Stage client:idle modelSizes={modelSizes} modelVersions={modelVersions} />
   </div>
 
   <!-- цели ссылок меню: места в скролле, где открыт первый кейс и «Обо мне» -->

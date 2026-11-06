@@ -11,7 +11,7 @@ import { offsetRect, posterBounds, visiblePoster } from '../../lib/stage/dom';
 import { approach, overallProgress, percentLabel } from '../../lib/preloader/progress';
 import { CARDS_DESKTOP, CARDS_MOBILE, STAGE, aboutStart, cardPose, flightProgress, headProgress, infoVisibility, partLine, sceneState, snapToStep, stageProgress } from '../../lib/stage/math';
 
-const props = defineProps<{ modelSizes: Record<string, number> }>();
+const props = defineProps<{ modelSizes: Record<string, number>; modelVersions: Record<string, string> }>();
 
 const root = ref<HTMLDivElement>();
 const cleanups: (() => void)[] = [];
@@ -355,6 +355,7 @@ onMounted(() => {
         // на touch-устройствах — текстуры 1024 вместо 2048
         modelUrl: canHover ? '/models/artem.glb' : '/models/artem-mobile.glb',
         modelSizes: props.modelSizes,
+        modelVersions: props.modelVersions,
         onProgress: ({ models, init }) => {
           progress.models = models;
           progress.init = init;
