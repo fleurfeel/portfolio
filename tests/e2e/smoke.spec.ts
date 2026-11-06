@@ -34,13 +34,13 @@ for (const path of pages) {
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
     });
 
-    test('шрифт Jura загружается', async ({ page }) => {
+    test('шрифт Advent Pro загружается', async ({ page }) => {
       await page.goto(path, { waitUntil: 'networkidle' });
       const faces = await page.evaluate(async () => {
-        const loaded = await document.fonts.load('16px Jura', 'Привет, Hello');
+        const loaded = await document.fonts.load('16px "Advent Pro"', 'Привет, Hello');
         return loaded.map((f) => f.family);
       });
-      expect(faces).toContain('Jura');
+      expect(faces).toContain('Advent Pro');
     });
   });
 }

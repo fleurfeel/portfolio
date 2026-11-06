@@ -31,16 +31,19 @@ test.describe('частые вопросы', () => {
     await page.goto('/');
     const item = page.locator('#faq details').nth(1);
     const closed = await item.evaluate((el) => el.getBoundingClientRect().height);
-    // высоту меряем сразу после клика и после окончания перехода
-    const [mid, end] = await item.evaluate(async (el) => {
+    // записываем высоту каждый кадр: под нагрузкой одна проба в фиксированный момент может попасть в начало перехода
+    const heights = await item.evaluate(async (el) => {
       el.querySelector('summary')!.click();
-      await new Promise((r) => setTimeout(r, 120));
-      const mid = el.getBoundingClientRect().height;
-      await new Promise((r) => setTimeout(r, 800));
-      return [mid, el.getBoundingClientRect().height];
+      const seen: number[] = [];
+      const start = performance.now();
+      while (performance.now() - start < 900) {
+        seen.push(el.getBoundingClientRect().height);
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      return seen;
     });
+    const end = heights.at(-1)!;
     expect(end).toBeGreaterThan(closed + 30);
-    expect(mid).toBeGreaterThan(closed);
-    expect(mid).toBeLessThan(end - 5);
+    expect(heights.some((h) => h > closed + 5 && h < end - 5)).toBe(true);
   });
 });

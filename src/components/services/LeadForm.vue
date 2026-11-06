@@ -201,7 +201,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClick));
   font-size: 28px;
   font-weight: 600;
   line-height: 1.1;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.01em;
 }
 
 .lead__lead {

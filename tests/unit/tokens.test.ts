@@ -22,8 +22,8 @@ describe('дизайн-токены', () => {
     expect(globalCss.toLowerCase()).toContain(`${token}: ${value};`);
   });
 
-  it('основной шрифт — Jura', () => {
-    expect(globalCss).toMatch(/--font-sans:\s*'Jura'/);
+  it('основной шрифт — Advent Pro', () => {
+    expect(globalCss).toMatch(/--font-sans:\s*'Advent Pro'/);
   });
 });
 

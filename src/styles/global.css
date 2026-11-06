@@ -3,11 +3,11 @@
 /* Прототипы и исходники не должны попадать в сканирование классов */
 @source not '../../reference';
 
-/* Jura: вариативный (wght 300–700), subset latin + cyrillic (+ ₽ и №). Лицензия: public/fonts/Jura-OFL.txt */
+/* Advent Pro: вариативный (wght 300–700, ширина зафиксирована на 100), subset latin + cyrillic (+ ₽ и №). Лицензия: public/fonts/AdventPro-OFL.txt */
 @font-face {
-  font-family: 'Jura';
-  src: url('/fonts/jura-var-latin-cyrillic.woff2') format('woff2-variations'),
-    url('/fonts/jura-var-latin-cyrillic.woff2') format('woff2');
+  font-family: 'Advent Pro';
+  src: url('/fonts/advent-pro-var-latin-cyrillic.woff2') format('woff2-variations'),
+    url('/fonts/advent-pro-var-latin-cyrillic.woff2') format('woff2');
   font-weight: 300 700;
   font-style: normal;
   font-display: swap;
@@ -29,7 +29,7 @@
   --color-surface: #ffffff;
 
   --font-*: initial;
-  --font-sans: 'Jura', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Advent Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 @layer base {
