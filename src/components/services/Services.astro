@@ -2,7 +2,7 @@
 // «Услуги и стоимость»: список строк на фоне сайта. Слева название, в центре теги и описание, справа срок, цена и кнопка заявки.
 // Появление по скроллу (CSS scroll-driven, у каждой строки своя view-timeline): линия прочерчивается слева направо,
 // слова названия переворачиваются, как в манифесте, теги раздаются веером из одной точки, остальное всплывает.
-// При наведении на строку: фиолетовое свечение, название сдвигается, теги по очереди становятся фиолетовыми,
+// При наведении на строку: линия становится фиолетовой, название сдвигается, теги по очереди становятся фиолетовыми,
 // кнопка заливается и надпись прокатывается. Меняются только transform и opacity.
 // Кнопка «Оставить заявку» открывает форму (остров LeadForm.vue), услуга в ней уже выбрана.
 // Ноутбук и десктоп (≥ 1024): три колонки. Планшет (640–1023): описание и цена рядом. Телефон: всё в один столбец.
@@ -104,22 +104,6 @@ const titleWords = 'Услуги и стоимость'.split(' ');
   .services__row {
     position: relative;
     display: grid;
-  }
-
-  /* свечение строки при наведении — выходит за поля до края экрана и гаснет до верха и низа строки */
-  .services__row::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    inset: 0 calc(var(--pad-x) * -1);
-    background: radial-gradient(
-      55% 50% at 100% 50%,
-      color-mix(in srgb, var(--color-accent) 45%, transparent) 0%,
-      color-mix(in srgb, var(--color-accent) 15%, transparent) 55%,
-      transparent 100%
-    );
-    opacity: 0;
-    transition: opacity 0.5s ease;
   }
 
   .services__line,
@@ -271,10 +255,6 @@ const titleWords = 'Услуги и стоимость'.split(' ');
   }
 
   @media (hover: hover) {
-    .services__row:hover::before {
-      opacity: 1;
-    }
-
     .services__row:hover .services__line::after {
       transform: none;
     }
@@ -547,7 +527,6 @@ const titleWords = 'Услуги и стоимость'.split(' ');
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .services__row::before,
     .services__line::after,
     .services__name,
     .services__tag::before,
