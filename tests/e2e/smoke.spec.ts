@@ -34,13 +34,13 @@ for (const path of pages) {
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
     });
 
-    test('шрифт Science Gothic загружается', async ({ page }) => {
+    test('шрифт Sofia Sans Semi Condensed загружается', async ({ page }) => {
       await page.goto(path, { waitUntil: 'networkidle' });
       const faces = await page.evaluate(async () => {
-        const loaded = await document.fonts.load('16px "Science Gothic"', 'Привет, Hello');
+        const loaded = await document.fonts.load('16px "Sofia Sans Semi Condensed"', 'Привет, Hello');
         return loaded.map((f) => f.family);
       });
-      expect(faces).toContain('Science Gothic');
+      expect(faces).toContain('Sofia Sans Semi Condensed');
     });
   });
 }

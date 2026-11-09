@@ -3,12 +3,12 @@
 /* Прототипы и исходники не должны попадать в сканирование классов */
 @source not '../../reference';
 
-/* Science Gothic: вариативный (wght 300–700; ширина, наклон и контраст зафиксированы), subset latin + cyrillic (+ ₽ и №). Лицензия: public/fonts/ScienceGothic-OFL.txt */
+/* Sofia Sans Semi Condensed: вариативный (wght 400–800), subset latin + cyrillic. Лицензия: public/fonts/SofiaSans-OFL.txt */
 @font-face {
-  font-family: 'Science Gothic';
-  src: url('/fonts/science-gothic-var-latin-cyrillic.woff2') format('woff2-variations'),
-    url('/fonts/science-gothic-var-latin-cyrillic.woff2') format('woff2');
-  font-weight: 300 700;
+  font-family: 'Sofia Sans Semi Condensed';
+  src: url('/fonts/sofia-sans-semi-condensed-var-latin-cyrillic.woff2') format('woff2-variations'),
+    url('/fonts/sofia-sans-semi-condensed-var-latin-cyrillic.woff2') format('woff2');
+  font-weight: 400 800;
   font-style: normal;
   font-display: swap;
 }
@@ -29,7 +29,12 @@
   --color-surface: #ffffff;
 
   --font-*: initial;
-  --font-sans: 'Science Gothic', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Sofia Sans Semi Condensed', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* жирность: заголовки и крупный акцентный текст — 800, остальной текст — 400 */
+  --font-weight-*: initial;
+  --font-weight-heading: 800;
+  --font-weight-text: 400;
 }
 
 @layer base {

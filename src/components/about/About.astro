@@ -88,7 +88,7 @@ import { education, experienceTitle, intro, jobs, resumeFileName, resumeUrl } fr
   }
 
   .about__title {
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
     line-height: 1.2;
     letter-spacing: -0.01em;
     text-transform: uppercase;
@@ -115,7 +115,7 @@ import { education, experienceTitle, intro, jobs, resumeFileName, resumeUrl } fr
   }
 
   .about__subtitle {
-    font-weight: 400;
+    font-weight: var(--font-weight-heading);
     line-height: 1.2;
     white-space: nowrap;
   }
@@ -231,7 +231,7 @@ import { education, experienceTitle, intro, jobs, resumeFileName, resumeUrl } fr
     background: var(--color-accent);
     color: var(--color-bg);
     font-size: 16px;
-    font-weight: 600;
+    font-weight: var(--font-weight-text);
     line-height: 1.2;
     transition: opacity 0.2s ease;
   }
@@ -263,7 +263,7 @@ import { education, experienceTitle, intro, jobs, resumeFileName, resumeUrl } fr
     .about__title {
       margin-top: 12px;
       font-size: 32px;
-      font-weight: 700;
+      font-weight: var(--font-weight-heading);
     }
 
     .about__intro {
@@ -341,7 +341,7 @@ import { education, experienceTitle, intro, jobs, resumeFileName, resumeUrl } fr
       --title-fs: calc(58 * var(--k));
       --col-top: calc(220 * var(--k));
       --col-w: calc(424 * var(--k));
-      --sub-fs: calc(26 * var(--k));
+      --sub-fs: calc(32 * var(--k));
       --list-gap: calc(46 * var(--k));
       --edu-title-fs: max(14px, calc(16 * var(--k)));
       --edu-program-fs: max(13px, calc(14 * var(--k)));
@@ -465,7 +465,7 @@ import { education, experienceTitle, intro, jobs, resumeFileName, resumeUrl } fr
       --title-fs: calc(58px + 6 * (100vw - 1440px) / 480);
       --col-top: calc(220px + 3 * (100vw - 1440px) / 480);
       --col-w: 424px;
-      --sub-fs: calc(26px + 4 * (100vw - 1440px) / 480);
+      --sub-fs: calc(32px + 4 * (100vw - 1440px) / 480);
       --list-gap: calc(46px - 8 * (100vw - 1440px) / 480);
       --edu-title-fs: calc(16px + 2 * (100vw - 1440px) / 480);
       --edu-program-fs: calc(14px + 2 * (100vw - 1440px) / 480);
@@ -488,7 +488,7 @@ import { education, experienceTitle, intro, jobs, resumeFileName, resumeUrl } fr
       --title-top: 99px;
       --title-fs: 64px;
       --col-top: 223px;
-      --sub-fs: 30px;
+      --sub-fs: 36px;
       --list-gap: 38px;
       --edu-title-fs: 18px;
       --edu-program-fs: 16px;

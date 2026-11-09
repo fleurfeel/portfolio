@@ -89,7 +89,7 @@ const close = () => panel.value?.hidePopover?.();
 
 .menu__link {
   font-size: 24px;
-  font-weight: 600;
+  font-weight: var(--font-weight-text);
   line-height: 1.2;
 }
 
@@ -101,7 +101,7 @@ const close = () => panel.value?.hidePopover?.();
   border-bottom: 1px solid currentColor;
   color: var(--color-accent);
   font-size: 18px;
-  font-weight: 600;
+  font-weight: var(--font-weight-text);
   line-height: 1.2;
 }
 </style>

@@ -199,7 +199,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClick));
 .lead__title {
   padding-right: 40px;
   font-size: 28px;
-  font-weight: 600;
+  font-weight: var(--font-weight-heading);
   line-height: 1.1;
   letter-spacing: -0.01em;
 }
@@ -217,12 +217,12 @@ onBeforeUnmount(() => document.removeEventListener('click', onClick));
 
 .lead__label {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--font-weight-text);
 }
 
 .lead__optional {
   color: var(--color-secondary);
-  font-weight: 400;
+  font-weight: var(--font-weight-text);
 }
 
 .lead input:not([type='checkbox']),
@@ -291,7 +291,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClick));
   color: var(--color-surface);
   font: inherit;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: var(--font-weight-text);
   cursor: pointer;
   transition: opacity 0.2s ease;
 }

@@ -51,7 +51,7 @@ const { doc, related } = Astro.props;
   .legal__back,
   .legal__related a {
     color: var(--color-accent);
-    font-weight: 600;
+    font-weight: var(--font-weight-text);
   }
 
   .legal a:focus-visible {
@@ -62,7 +62,7 @@ const { doc, related } = Astro.props;
   .legal__title {
     margin-top: 40px;
     font-size: clamp(32px, 5vw, 48px);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
     line-height: 1.1;
     letter-spacing: -0.01em;
   }
@@ -83,7 +83,7 @@ const { doc, related } = Astro.props;
 
   .legal__section h2 {
     font-size: 22px;
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
     line-height: 1.2;
     letter-spacing: -0.01em;
   }

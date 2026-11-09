@@ -83,7 +83,7 @@ const titleWords = 'Услуги и стоимость'.split(' ');
   }
 
   .services__title {
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
     line-height: 1.2;
     letter-spacing: -0.01em;
     text-transform: uppercase;
@@ -154,13 +154,13 @@ const titleWords = 'Услуги и стоимость'.split(' ');
     flex: none;
     color: var(--color-secondary);
     font-size: var(--small-fs);
-    font-weight: 600;
+    font-weight: var(--font-weight-text);
     line-height: 1.2;
   }
 
   .services__name {
     font-size: var(--name-fs);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
     line-height: 1.1;
     letter-spacing: -0.01em;
     text-transform: uppercase;
@@ -182,7 +182,7 @@ const titleWords = 'Услуги и стоимость'.split(' ');
     background: var(--color-text);
     color: var(--color-surface);
     font-size: var(--small-fs);
-    font-weight: 600;
+    font-weight: var(--font-weight-text);
     line-height: 1.2;
   }
 
@@ -213,7 +213,7 @@ const titleWords = 'Услуги и стоимость'.split(' ');
   .services__price {
     margin-top: 4px;
     font-size: var(--price-fs);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
     line-height: 1.1;
     letter-spacing: -0.01em;
   }
@@ -230,7 +230,7 @@ const titleWords = 'Услуги и стоимость'.split(' ');
     color: var(--color-text);
     font: inherit;
     font-size: var(--cta-fs);
-    font-weight: 600;
+    font-weight: var(--font-weight-text);
     line-height: 1.2;
     cursor: pointer;
   }
@@ -300,7 +300,7 @@ const titleWords = 'Услуги и стоимость'.split(' ');
   @media (max-width: 1023.98px) {
     .services {
       --pad-x: 20px;
-      --name-fs: 22px;
+      --name-fs: 30px;
       --text-fs: 17px;
       --small-fs: 14px;
       --price-fs: 28px;
@@ -333,7 +333,7 @@ const titleWords = 'Услуги и стоимость'.split(' ');
   @media (min-width: 640px) and (max-width: 1023.98px) {
     .services {
       --pad-x: 40px;
-      --name-fs: 30px;
+      --name-fs: 36px;
     }
 
     .services__title {
@@ -374,10 +374,10 @@ const titleWords = 'Услуги и стоимость'.split(' ');
       --pad-x: calc(60 * var(--k));
       --pad-top: calc(120 * var(--k));
       --title-fs: calc(58 * var(--k));
-      --name-fs: calc(36 * var(--k));
+      --name-fs: calc(44 * var(--k));
       --text-fs: 18px;
       --small-fs: 15px;
-      --price-fs: max(22px, calc(26 * var(--k)));
+      --price-fs: max(24px, calc(30 * var(--k)));
       --cta-fs: 16px;
       --cols: minmax(0, 1fr) minmax(0, 0.66fr) minmax(240px, 0.34fr);
       --col-gap: calc(32 * var(--k));

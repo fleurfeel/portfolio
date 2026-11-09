@@ -22,8 +22,13 @@ describe('дизайн-токены', () => {
     expect(globalCss.toLowerCase()).toContain(`${token}: ${value};`);
   });
 
-  it('основной шрифт — Science Gothic', () => {
-    expect(globalCss).toMatch(/--font-sans:\s*'Science Gothic'/);
+  it('основной шрифт — Sofia Sans Semi Condensed', () => {
+    expect(globalCss).toMatch(/--font-sans:\s*'Sofia Sans Semi Condensed'/);
+  });
+
+  it('жирность: заголовки 800, текст 400', () => {
+    expect(globalCss).toMatch(/--font-weight-heading:\s*800/);
+    expect(globalCss).toMatch(/--font-weight-text:\s*400/);
   });
 });
 

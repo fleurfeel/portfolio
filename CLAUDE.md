@@ -14,7 +14,7 @@ Astro + TypeScript (статическая сборка) · Tailwind v4 · Vue (
 
 - `src/styles/global.css` — все токены в `@theme` (единственное место, где допустимы hex)
 - `src/layouts/BaseLayout.astro` — базовый лейаут (lang="ru", meta, preload шрифта)
-- `public/fonts/` — Science Gothic, вариативный woff2, subset latin + cyrillic
+- `public/fonts/` — Sofia Sans Semi Condensed, вариативный woff2, subset latin + cyrillic
 - `public/models/` — сжатые GLB (meshopt + WebP)
 - Прод: https://portfolio-d4l.pages.dev (`site` в astro.config.mjs)
 - `public/_headers` — заголовки кэша для Cloudflare Pages; `.node-version` — версия Node для сборки
