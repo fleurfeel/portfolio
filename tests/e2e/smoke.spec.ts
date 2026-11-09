@@ -34,13 +34,13 @@ for (const path of pages) {
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
     });
 
-    test('шрифт Advent Pro загружается', async ({ page }) => {
+    test('шрифт Science Gothic загружается', async ({ page }) => {
       await page.goto(path, { waitUntil: 'networkidle' });
       const faces = await page.evaluate(async () => {
-        const loaded = await document.fonts.load('16px "Advent Pro"', 'Привет, Hello');
+        const loaded = await document.fonts.load('16px "Science Gothic"', 'Привет, Hello');
         return loaded.map((f) => f.family);
       });
-      expect(faces).toContain('Advent Pro');
+      expect(faces).toContain('Science Gothic');
     });
   });
 }
