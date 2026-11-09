@@ -200,6 +200,7 @@ const titleWords = 'Услуги и стоимость'.split(' ');
     font-weight: var(--font-weight-heading);
     line-height: 1.1;
     letter-spacing: -0.01em;
+    white-space: nowrap; /* цена всегда в одну строку */
   }
 
   .services__cta {
@@ -359,7 +360,7 @@ const titleWords = 'Услуги и стоимость'.split(' ');
       --small-fs: 15px;
       --price-fs: max(24px, calc(30 * var(--k)));
       --cta-fs: 16px;
-      --cols: minmax(0, 1fr) minmax(0, 0.66fr) minmax(240px, 0.34fr);
+      --cols: minmax(0, 1fr) minmax(0, 0.66fr) minmax(max(240px, calc(var(--price-fs) * 8.4)), 0.34fr); /* колонка цены не уже самой длинной цены в одну строку; одинакова во всех строках */
       --col-gap: calc(32 * var(--k));
 
       padding: calc(var(--pad-top) * 0.5) var(--pad-x) var(--pad-top);
@@ -402,8 +403,10 @@ const titleWords = 'Услуги и стоимость'.split(' ');
       max-width: 620px;
     }
 
+    /* описание узкой колонкой в несколько строк, как в референсе */
     .services__text {
       grid-area: text;
+      max-width: 22em;
     }
 
     .services__side {
