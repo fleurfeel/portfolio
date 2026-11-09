@@ -1,5 +1,5 @@
 ---
-// «Частые вопросы». Макета нет — в стилистике блока «Услуги»: белые карточки, фиолетовое свечение у открытого вопроса.
+// «Частые вопросы». Макета нет — в стилистике блока «Услуги»: белые карточки; открытый вопрос приподнимается и отбрасывает тень.
 // Аккордеон на <details name="faq"> — без JS, открыт один вопрос за раз. Плюс превращается в крестик (поворот),
 // ответ проявляется (прозрачность и сдвиг). Кнопка «Задать вопрос» открывает форму заявки (остров LeadForm.vue
 // в «Услугах» слушает все кнопки с data-lead).
@@ -78,25 +78,30 @@ import { faq } from '../../data/faq';
 
   .faq__item {
     position: relative;
-    overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
     border-radius: 24px;
     background: var(--color-surface);
+    transition: translate 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  /* фиолетовое свечение у открытого вопроса — как у карточек услуг */
+  /* открытый вопрос приподнимается: карточка чуть выше, под ней проявляется мягкая тень.
+     Тень — отдельный слой под карточкой, меняется только его прозрачность */
   .faq__item::before {
     content: '';
     position: absolute;
+    z-index: -1;
     inset: 0;
-    background: radial-gradient(
-      circle at 105% 0%,
-      color-mix(in srgb, var(--color-accent) 45%, transparent),
-      transparent 55%
-    );
+    border-radius: inherit;
+    box-shadow:
+      0 2px 6px color-mix(in srgb, var(--color-text) 6%, transparent),
+      0 18px 40px -12px color-mix(in srgb, var(--color-text) 22%, transparent);
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.45s ease;
     pointer-events: none;
+  }
+
+  .faq__item[open] {
+    translate: 0 -4px;
   }
 
   .faq__item[open]::before {
@@ -340,6 +345,7 @@ import { faq } from '../../data/faq';
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .faq__item,
     .faq__item::before,
     .faq__icon,
     .faq__cta {
