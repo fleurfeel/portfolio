@@ -1,10 +1,10 @@
 // Пересобирает веб-версии 3D-моделей: reference/*.glb → public/models/*.glb
 // meshopt-сжатие геометрии (декодируется MeshoptDecoder), текстуры в WebP.
-// Маскот: исходник уже подготовлен для веба (meshopt, WebP 2048 px) и копируется как есть — повторное сжатие
-// заметно портит текстуры; artem-mobile.glb для touch-устройств — до 1024 px. Логотипы — до 512 px.
+// Маскот: сжимается только геометрия, текстуры (2048 px) остаются как в исходнике — перекодирование
+// заметно портит их; artem-mobile.glb для touch-устройств — текстуры WebP до 1024 px. Логотипы — до 512 px.
 // Геометрию не упрощаем, чтобы не сломать риг.
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 const SRC = 'reference';
@@ -17,15 +17,15 @@ if (!existsSync(SRC)) {
 }
 
 function optimize(src, out, textureSize) {
-  const args = ['gltf-transform', 'optimize', src, out, '--compress', 'meshopt', '--texture-compress', 'webp', '--texture-size', String(textureSize), '--simplify', 'false'];
+  const textures = textureSize ? ['--texture-compress', 'webp', '--texture-size', String(textureSize)] : ['--texture-compress', 'false'];
+  const args = ['gltf-transform', 'optimize', src, out, '--compress', 'meshopt', ...textures, '--simplify', 'false'];
   console.log(`→ ${out}`);
   execFileSync('npx', args, { stdio: 'inherit', shell: process.platform === 'win32' });
 }
 
 for (const file of readdirSync(SRC).filter((f) => f.endsWith('.glb'))) {
   if (file === MASCOT) {
-    console.log(`→ ${join(OUT, file)} (копия)`);
-    copyFileSync(join(SRC, file), join(OUT, file));
+    optimize(join(SRC, file), join(OUT, file), 0);
     optimize(join(SRC, file), join(OUT, 'artem-mobile.glb'), 1024);
   } else {
     optimize(join(SRC, file), join(OUT, `tool-${basename(file)}`), 512);

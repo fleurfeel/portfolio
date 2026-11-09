@@ -7,8 +7,8 @@
 
 | Файл | Что | Размер |
 |---|---|---|
-| `artem.glb` | маскот, skinned mesh, 17 костей, без анимаций (T-поза), текстуры 2048 | ~1,2 МБ |
-| `artem-mobile.glb` | то же, текстуры 1024 — для touch-устройств | ~1 МБ |
+| `artem.glb` | маскот, skinned mesh, 17 костей, без анимаций (T-поза), текстуры 2048 (цвет, нормали, roughness/metalness) как в исходнике | ~1,1 МБ |
+| `artem-mobile.glb` | то же, текстуры WebP 1024 — для touch-устройств | ~0,7 МБ |
 | `tool-*.glb` | 8 логотипов инструментов: figma, claude, tilda, gpt, claude_code, git, yougile, flow | 95–250 КБ |
 
 Сжаты `npm run optimize:models` (gltf-transform): `EXT_meshopt_compression` + `KHR_mesh_quantization`, текстуры WebP
