@@ -1,8 +1,9 @@
 ---
-// Страница кейса — заглушка до макета.
+// Страница кейса — заглушка до макета. Шапка — обложка: в неё вырастает карточка кейса (морф, см. global.css),
+// текст под ней всплывает по очереди.
 import { Image } from 'astro:assets';
 import ArrowRightLong from '../../assets/icons/arrow-right-long.svg';
-import { projectUrl, projects } from '../../data/projects';
+import { coverTransitionName, projectUrl, projects } from '../../data/projects';
 import Footer from '../../components/footer/Footer.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { formatCounter } from '../../lib/stage/math';
@@ -22,12 +23,12 @@ const next = projects[(index + 1) % projects.length]!;
       <a href="/projects">Все проекты</a>
     </nav>
 
+    <div class="case__image" style={`view-transition-name:${coverTransitionName(project)}`}>
+      <Image src={project.cover} widths={[600, 1000, 1400, 1920]} sizes="(min-width: 1240px) 1200px, 100vw" alt={`Первый экран ${project.title}`} loading="eager" />
+    </div>
     <p class="case__counter">{formatCounter(index, projects.length)}</p>
     <h1 class="case__title">{project.title}</h1>
     <p class="case__summary">{project.summary}</p>
-    <div class="case__image">
-      <Image src={project.cover} widths={[600, 1000, 1400, 1920]} sizes="(min-width: 1240px) 1200px, 100vw" alt={`Первый экран ${project.title}`} loading="eager" />
-    </div>
 
     <a class="case__next" href={projectUrl(next)}>
       Следующий проект
@@ -50,7 +51,7 @@ const next = projects[(index + 1) % projects.length]!;
   .case__nav {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 48px;
+    margin-bottom: 16px;
     font-weight: var(--font-weight-text);
   }
 
@@ -81,8 +82,9 @@ const next = projects[(index + 1) % projects.length]!;
   }
 
   .case__image {
-    margin-top: 24px;
+    margin-bottom: 24px;
     overflow: hidden;
+    view-transition-class: case-cover;
     border-radius: clamp(18px, 2.5vw, 36px);
     background: color-mix(in srgb, var(--color-secondary) 18%, var(--color-bg));
   }
@@ -91,6 +93,39 @@ const next = projects[(index + 1) % projects.length]!;
     display: block;
     width: 100%;
     height: auto;
+  }
+
+  /* текст всплывает по очереди, пока обложка встаёт на место */
+  @media (prefers-reduced-motion: no-preference) {
+    .case__counter,
+    .case__title,
+    .case__summary,
+    .case__next {
+      animation: case-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    }
+
+    .case__counter {
+      animation-delay: 0.3s;
+    }
+
+    .case__title {
+      animation-delay: 0.37s;
+    }
+
+    .case__summary {
+      animation-delay: 0.44s;
+    }
+
+    .case__next {
+      animation-delay: 0.51s;
+    }
+  }
+
+  @keyframes case-rise {
+    from {
+      opacity: 0;
+      transform: translateY(36px);
+    }
   }
 
   .case__next {

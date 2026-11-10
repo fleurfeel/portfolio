@@ -6,7 +6,7 @@ import { Image, Picture } from 'astro:assets';
 import ArrowRightLong from '../../assets/icons/arrow-right-long.svg';
 import avatar from '../../assets/hero/avatar.png';
 import mascot from '../../assets/hero/mascot.png';
-import { projectUrl, projects } from '../../data/projects';
+import { coverTransitionName, projectUrl, projects } from '../../data/projects';
 import { CARDS_DESKTOP, CARDS_MOBILE, cardPose, formatCounter } from '../../lib/stage/math';
 
 const cardVars = (i: number) => {
@@ -49,7 +49,7 @@ const cardVars = (i: number) => {
       projects.map((project, i) => (
         <li class="projects__card" data-card={i} style={cardVars(i)}>
           <a href={projectUrl(project)} aria-label={`Кейс ${project.title}`}>
-            <span class="projects__image">
+            <span class="projects__image" data-cover={coverTransitionName(project)}>
               <Image
                 src={project.cover}
                 widths={[400, 700, 1000, 1400]}
@@ -73,7 +73,7 @@ const cardVars = (i: number) => {
             <p class="projects__counter">{formatCounter(i, projects.length)}</p>
             <h3 class="projects__name">{project.title}</h3>
             <p class="projects__summary">{project.summary}</p>
-            <a class="projects__cta" href={projectUrl(project)}>
+            <a class="projects__cta" href={projectUrl(project)} data-cover-for={i}>
               Посмотреть полностью
             </a>
           </div>
@@ -165,6 +165,7 @@ const cardVars = (i: number) => {
     /* фон, пока грузится обложка */
     background: color-mix(in srgb, var(--color-secondary) 18%, var(--color-bg));
     transition: opacity 0.2s ease;
+    view-transition-class: case-cover; /* морф в шапку кейса, см. global.css; имя ставит Stage.vue по нажатию */
   }
 
   /* обложка кейса: заполняет рамку, обрезаясь по краям */

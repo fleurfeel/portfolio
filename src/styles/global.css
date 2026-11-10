@@ -45,6 +45,48 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /*
+    Морф «карточка кейса → шапка кейса»: нативный переход между страницами (View Transitions), без JS-роутера.
+    Обложка на обеих страницах носит одно имя view-transition-name (case-<slug>) и класс case-cover:
+    браузер сам растит её из карточки в шапку и сворачивает обратно. Где переходов между документами нет —
+    обычная навигация. При reduced motion выключено.
+  */
+  @media (prefers-reduced-motion: no-preference) {
+    @view-transition {
+      navigation: auto;
+    }
+
+    /* остальная страница растворяется, пока обложка летит */
+    ::view-transition-old(root) {
+      animation-duration: 0.38s;
+    }
+
+    ::view-transition-new(root) {
+      animation-duration: 0.45s;
+      animation-delay: 0.15s;
+    }
+
+    /* рамка летящей обложки: обрезает снимки по себе и держит скругление */
+    ::view-transition-group(.case-cover) {
+      overflow: clip;
+      border-radius: 24px;
+      animation-duration: 0.72s;
+      animation-timing-function: cubic-bezier(0.7, 0, 0.2, 1);
+    }
+
+    /* у карточки и шапки разные пропорции: снимки заполняют рамку и обрезаются, а не растягиваются
+       (без overflow: clip снимок вылезает за рамку) */
+    ::view-transition-old(.case-cover),
+    ::view-transition-new(.case-cover) {
+      width: 100%;
+      height: 100%;
+      overflow: clip;
+      object-fit: cover;
+      object-position: left top;
+      animation-duration: 0.72s;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

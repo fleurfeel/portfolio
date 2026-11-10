@@ -163,6 +163,33 @@ onMounted(() => {
     if (aboutLayer.contains(el) && transition.aboutOpacity < 1) scrollToStage(aboutStart(count) + STAGE.about);
   };
 
+  // Морф «карточка → шапка кейса» (View Transitions между страницами, см. global.css): имя перехода получает
+  // только обложка нажатого кейса. У всех сразу нельзя: именованные элементы рисуются поверх страницы без
+  // прозрачности и тумана своих слоёв и мелькали бы при любом уходе с главной.
+  const covers = [...stage.querySelectorAll<HTMLElement>('[data-cover]')];
+  const clearCover = () => covers.forEach((el) => el.style.removeProperty('view-transition-name'));
+  const onCaseClick = (e: MouseEvent) => {
+    const link = (e.target as HTMLElement).closest<HTMLElement>('[data-card] a, [data-cover-for]');
+    // в новой вкладке или окне главная остаётся открытой — имя не нужно
+    if (!link || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const index = Number(link.dataset.coverFor ?? link.closest<HTMLElement>('[data-card]')?.dataset.card);
+    const cover = cards[index]?.querySelector<HTMLElement>('[data-cover]');
+    clearCover();
+    if (cover) cover.style.setProperty('view-transition-name', cover.dataset.cover!);
+  };
+  // вернулись назад из кеша страниц: обложка сворачивается в ту же карточку, после этого имя снимаем
+  let coverTimer = 0;
+  const onPageShow = (e: PageTransitionEvent) => {
+    if (e.persisted) coverTimer = window.setTimeout(clearCover, 1500);
+  };
+  stage.addEventListener('click', onCaseClick, true);
+  addEventListener('pageshow', onPageShow);
+  cleanups.push(() => {
+    stage.removeEventListener('click', onCaseClick, true);
+    removeEventListener('pageshow', onPageShow);
+    clearTimeout(coverTimer);
+  });
+
   // «Обо мне» выше экрана (телефон): под сценой нужен «хвост» на остаток секции
   const sizeTail = () => {
     if (tail) tail.style.height = `${Math.max(0, aboutLayer.offsetHeight - pin.clientHeight)}px`;

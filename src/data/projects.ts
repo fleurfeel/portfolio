@@ -61,3 +61,6 @@ export const projects: Project[] = [
 ];
 
 export const projectUrl = (p: Project) => `/projects/${p.slug}`;
+
+/** Имя перехода обложки: одно и то же у карточки и у шапки кейса — браузер морфит одну в другую. */
+export const coverTransitionName = (project: Project) => `case-${project.slug}`;
