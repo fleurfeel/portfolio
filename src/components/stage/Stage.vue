@@ -238,14 +238,16 @@ onMounted(() => {
 
   // рамка 3D-головы в окне сейчас и прогресс «тело → голова»
   const headNow = () => {
+    // высота экрана — по sticky-экрану (100svh): innerHeight на телефоне скачет вместе с адресной строкой
+    const vh = pin.clientHeight;
     let head = headDoc ? { ...headDoc, top: headDoc.top - scrollY } : null;
     let flight = 0;
-    const headMix = manifesto ? headProgress(manifesto.getBoundingClientRect().top, innerHeight) : 0;
+    const headMix = manifesto ? headProgress(manifesto.getBoundingClientRect().top, vh) : 0;
     if (head && howHeadPoster) {
       // голова манифеста → голова «Как я работаю»: доходит, когда та поднялась примерно на 60% экрана.
       // Рамку берём живую: на ноутбуке и десктопе «Как я работаю» — закреплённый (sticky) экран
       const r = howHeadPoster.getBoundingClientRect();
-      flight = flightProgress(r.top - innerHeight * 0.45, innerHeight);
+      flight = flightProgress(r.top - vh * 0.45, vh);
       if (flight > 0) head = mixRect(head, { left: r.left, top: r.top, width: r.width, height: r.height }, flight);
     }
     if (head && footerHeadPoster) {
@@ -253,7 +255,7 @@ onMounted(() => {
       // голова «Как я работаю» уже давно за верхним краем — переносим её в футер скачком, этого не видно.
       // Рамку берём живую: постер выезжает снизу анимацией по скроллу и приподнимается при наведении
       const f = footerHeadPoster.getBoundingClientRect();
-      if (f.width && f.top < innerHeight * 1.1) head = { left: f.left, top: f.top, width: f.width, height: f.height };
+      if (f.width && f.top < vh * 1.1) head = { left: f.left, top: f.top, width: f.width, height: f.height };
     }
     return { head, headMix, flight };
   };
@@ -304,12 +306,43 @@ onMounted(() => {
     }
   };
 
+  // Холст 3D едет вместе со страницей, а не висит на экране. Скролл на телефоне рисует отдельный поток, и кадр 3D
+  // всегда чуть отстаёт от него: на фиксированном холсте маскот «плавал» и дрожал относительно текста. Теперь холст
+  // лежит в sticky-экране сцены и каждый кадр сдвигается так, чтобы накрывать окно: пока сцена закреплена, он стоит
+  // на экране вместе с ней, а когда отпущена — прокручивается вместе с документом, и между кадрами маскот не съезжает.
+  // Исключение — закреплённый экран «Как я работаю» (ноутбук и десктоп): там холст фиксируется на экране.
+  // Холст выше окна на OVERSCAN с каждой стороны: при быстрой прокрутке край не успевает показаться.
+  const OVERSCAN = 100;
+  let layerTop = -OVERSCAN; // где сейчас верх холста относительно окна
+  let layerFixed = false;
+  let layerHeight = layer.offsetHeight;
+  let bodyHeight = document.body.offsetHeight;
+  let howPinSticky = false;
+  const measureLayer = () => {
+    layerHeight = layer.offsetHeight;
+    bodyHeight = document.body.offsetHeight;
+    howPinSticky = !!howPin && getComputedStyle(howPin).position === 'sticky';
+  };
+  const placeLayer = (pinTop: number) => {
+    const fixed = howPinSticky && Math.abs(howPin!.getBoundingClientRect().top) < 1;
+    // не ниже конца документа: иначе холст сам удлинил бы страницу
+    const top = fixed ? -OVERSCAN : Math.min(-OVERSCAN, bodyHeight - scrollY - layerHeight);
+    if (fixed !== layerFixed) {
+      layerFixed = fixed;
+      layer.style.position = fixed ? 'fixed' : '';
+    }
+    layer.style.transform = `translate3d(0,${(fixed ? top : top - pinTop).toFixed(2)}px,0)`;
+    layerTop = top;
+  };
+
   const ro = new ResizeObserver(() => {
     sizeTail();
     measureHead();
     measureWords();
+    measureLayer();
     schedule();
   });
+  ro.observe(document.body);
   ro.observe(pin);
   ro.observe(aboutLayer);
   if (manifesto) ro.observe(manifesto);
@@ -326,6 +359,8 @@ onMounted(() => {
   });
   sizeTail();
   measureWords();
+  measureLayer();
+  placeLayer(pin.getBoundingClientRect().top);
   update();
 
   // --- 3D
@@ -364,7 +399,13 @@ onMounted(() => {
         container: layer,
         measure,
         getTransition: () => transition,
-        getDynamic: () => ({ pinTop: pin.getBoundingClientRect().top, ...headNow() }),
+        // координаты — относительно холста: он сдвинут относительно окна (placeLayer)
+        getDynamic: () => {
+          const pinTop = pin.getBoundingClientRect().top;
+          const now = headNow();
+          placeLayer(pinTop);
+          return { ...now, pinTop: pinTop - layerTop, head: now.head && { ...now.head, top: now.head.top - layerTop } };
+        },
         observe: [pin, manifesto, how, footer].filter((el): el is HTMLElement => !!el),
         reducedMotion,
         trackCursor: shouldTrackCursor({ canHover, reducedMotion }),
@@ -399,9 +440,15 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .mascot-layer {
-  /* во весь экран: маскот перелетает из сцены в манифест */
-  position: fixed;
-  inset: 0;
+  /* окно во весь экран, которое едет вместе со страницей (сдвиг ставит placeLayer): маскот перелетает из сцены
+     в манифест и дальше. Высота — по самому высокому экрану (lvh) плюс запас сверху и снизу: когда на телефоне
+     прячется адресная строка, холст не пересоздаётся */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100vh + 200px);
+  height: calc(100lvh + 200px);
   z-index: 1;
   opacity: 0;
   transition: opacity 0.6s ease;

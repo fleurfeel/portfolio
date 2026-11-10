@@ -46,7 +46,7 @@ const snaps = [0, ...projects.map((_, i) => STAGE.transition + STAGE.step * i), 
   <!-- цели ссылок меню: места в скролле, где открыт первый кейс и «Обо мне» -->
   <div id="projects" class="stage__anchor" style={`--flow:1;--fx:${STAGE.transition}`}></div>
   <div id="about" class="stage__anchor" style={`--flow:2;--fx:${end}`}></div>
-  {snaps.map((at) => <div class="stage__snap" style={`--at:${at}`} />)}
+  {snaps.map((at, i) => <div class:list={['stage__snap', i === snaps.length - 1 && 'stage__snap--end']} style={`--at:${at}`} />)}
 </div>
 <div class="stage-tail" data-stage-tail></div>
 
@@ -106,6 +106,14 @@ const snaps = [0, ...projects.map((_, i) => STAGE.transition + STAGE.step * i), 
     width: 1px;
     height: 1px;
     scroll-snap-align: start;
+  }
+
+  /* телефон: «Обо мне» выше экрана и продолжается под сценой — привязка к её началу тянула бы страницу назад,
+     пока читаешь продолжение */
+  @media (max-width: 1023.98px) {
+    .stage[data-fx] .stage__snap--end {
+      scroll-snap-align: none;
+    }
   }
 
   :global(:root:has(.stage[data-fx])) {
