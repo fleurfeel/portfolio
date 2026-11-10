@@ -19,10 +19,10 @@ const next = projects[(index + 1) % projects.length]!;
 const study = caseStudies[project.slug];
 const sizes: Record<string, string> = {
   wide: '(min-width: 1240px) 1200px, 100vw',
-  narrow: '(min-width: 800px) 720px, 100vw',
+  page: '(min-width: 840px) 760px, 100vw',
   pair: '(min-width: 1240px) 590px, (min-width: 720px) 50vw, 100vw',
   trio: '(min-width: 1240px) 390px, (min-width: 720px) 33vw, 100vw',
-  phones: '(min-width: 720px) 300px, 70vw',
+  phones: '(min-width: 720px) 280px, 70vw',
 };
 ---
 
@@ -68,9 +68,16 @@ const sizes: Record<string, string> = {
               {section.media?.map((media) => (
                 <div class:list={['case__media', `case__media--${media.layout}`]}>
                   {media.images.map((image, k) => (
-                    <figure class="case__shot" style={`--k:${k}`}>
-                      <div class="case__shot-frame">
-                        <Image src={image.src} widths={[400, 700, 1000, image.src.width]} sizes={sizes[media.layout]} alt={image.alt} loading="lazy" decoding="async" />
+                    <figure class="case__shot" style={`--k:${k};--natural:${Math.round(image.src.width / (image.scale ?? 1))}px`}>
+                      <div class:list={['case__shot-frame', image.bare && 'case__shot-frame--bare']}>
+                        <Image
+                          src={image.src}
+                          widths={[400, 700, 1000, 1440, image.src.width].filter((w) => w <= image.src.width)}
+                          sizes={sizes[media.layout]}
+                          alt={image.alt}
+                          loading="lazy"
+                          decoding="async"
+                        />
                       </div>
                       {image.caption && <figcaption>{image.caption}</figcaption>}
                     </figure>
@@ -241,7 +248,14 @@ const sizes: Record<string, string> = {
     display: grid;
     gap: 16px;
     grid-column: 1 / -1;
+    justify-items: center;
     margin-top: 16px;
+  }
+
+  /* экран целиком и не крупнее, чем в макете (--natural): мелкие блоки не растягиваются и не мылятся */
+  .case__shot {
+    width: 100%;
+    max-width: var(--natural);
   }
 
   .case__shot figcaption {
@@ -259,24 +273,27 @@ const sizes: Record<string, string> = {
     background: var(--color-surface);
   }
 
+  .case__shot-frame--bare {
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+
   .case__shot-frame :global(img) {
     display: block;
     width: 100%;
     height: auto;
   }
 
-  .case__media--narrow {
-    justify-items: center;
-  }
-
-  .case__media--narrow .case__shot {
-    width: min(100%, 720px);
+  /* длинная страница целиком: уже, чтобы не занимала несколько экранов */
+  .case__media--page .case__shot {
+    max-width: min(var(--natural), 760px);
   }
 
   /* телефоны: листаются вбок, если не помещаются */
   .case__media--phones {
     grid-auto-flow: column;
-    grid-auto-columns: min(70vw, 300px);
+    grid-auto-columns: min(70vw, 280px);
     justify-content: start;
     overflow-x: auto;
     padding-bottom: 8px;
@@ -308,7 +325,7 @@ const sizes: Record<string, string> = {
 
     .case__media--phones {
       justify-content: center;
-      gap: 24px;
+      gap: 20px;
     }
   }
 

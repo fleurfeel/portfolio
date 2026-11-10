@@ -7,13 +7,24 @@ test.describe('страница кейса', () => {
     await expect(page.locator('.case__facts dt')).toHaveCount(4);
 
     const sections = page.locator('.case__section');
-    await expect(sections).toHaveCount(7);
+    await expect(sections).toHaveCount(9);
     await expect(sections.locator('h2').first()).toHaveText('Задача');
     await expect(page.getByRole('heading', { name: 'Подбор шкипера' })).toBeAttached();
 
     // у каждого экрана есть описание для скринридера
     const shots = page.locator('.case__shot img');
-    expect(await shots.count()).toBeGreaterThanOrEqual(12);
+    expect(await shots.count()).toBeGreaterThanOrEqual(20);
+
+    // экраны показываются целиком: рамка не обрезает картинку и не растягивает её крупнее макета
+    const fits = await page.locator('.case__shot').evaluateAll((els) =>
+      els.map((el) => {
+        const img = el.querySelector('img')!;
+        const frame = el.querySelector('.case__shot-frame')!;
+        const style = getComputedStyle(img);
+        return style.objectFit !== 'cover' && Math.abs(frame.clientHeight - img.clientHeight) <= 1 && img.clientWidth <= parseFloat(getComputedStyle(el).getPropertyValue('--natural')) + 1;
+      }),
+    );
+    expect(fits.every(Boolean)).toBe(true);
     for (const alt of await shots.evaluateAll((els) => els.map((el) => el.getAttribute('alt')))) expect(alt).toBeTruthy();
 
     // картинки подгружаются, страница не скроллится вбок

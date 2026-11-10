@@ -1,27 +1,41 @@
-// Кейс CatamaranGo: что показываем и в каком порядке. Экраны — из Figma (страница CTG), тексты — по самим макетам.
+// Кейс CatamaranGo: что показываем и в каком порядке. Экраны — целые фреймы из Figma (страница CTG, только верхний
+// уровень: фреймы из секций «16 Профиль…», «17…», «17.1…» и других секций сюда не берём), без обрезки.
+// Тексты — по самим макетам.
 import type { CaseStudy } from './types';
-import catalogMap from '../../assets/projects/catamarango/catalog-map.webp';
+import boatPage from '../../assets/projects/catamarango/boat-page.webp';
+import boatPhotos from '../../assets/projects/catamarango/boat-photos.webp';
+import bookingConfirmed from '../../assets/projects/catamarango/booking-confirmed.webp';
+import bookings from '../../assets/projects/catamarango/bookings.webp';
+import catalog from '../../assets/projects/catamarango/catalog.webp';
+import compared from '../../assets/projects/catamarango/compared.webp';
+import destination from '../../assets/projects/catamarango/destination.webp';
 import heroFinal from '../../assets/projects/catamarango/hero-final.webp';
 import heroV1 from '../../assets/projects/catamarango/hero-v1.webp';
 import heroV2 from '../../assets/projects/catamarango/hero-v2.webp';
 import heroV3 from '../../assets/projects/catamarango/hero-v3.webp';
-import mobileAvailability from '../../assets/projects/catamarango/mobile-availability.webp';
-import mobileBoat from '../../assets/projects/catamarango/mobile-boat.webp';
-import mobileMain from '../../assets/projects/catamarango/mobile-main.webp';
-import orderExtras from '../../assets/projects/catamarango/order-extras.webp';
-import orderInsurance from '../../assets/projects/catamarango/order-insurance.webp';
-import orderPayment from '../../assets/projects/catamarango/order-payment.webp';
-import ownerCalendar from '../../assets/projects/catamarango/owner-calendar.webp';
-import ownerPrice from '../../assets/projects/catamarango/owner-price.webp';
+import mobileFilters from '../../assets/projects/catamarango/mobile-filters.webp';
+import mobileMenu from '../../assets/projects/catamarango/mobile-menu.webp';
+import mobilePhotos from '../../assets/projects/catamarango/mobile-photos.webp';
+import mobileSkippers from '../../assets/projects/catamarango/mobile-skippers.webp';
+import orderCrew from '../../assets/projects/catamarango/order-crew.webp';
+import orderFinal from '../../assets/projects/catamarango/order-final.webp';
+import orderSummary from '../../assets/projects/catamarango/order-summary.webp';
+import orderV1 from '../../assets/projects/catamarango/order-v1.webp';
+import orderV2 from '../../assets/projects/catamarango/order-v2.webp';
+import payFailed from '../../assets/projects/catamarango/pay-failed.webp';
+import paySuccess from '../../assets/projects/catamarango/pay-success.webp';
+import payVerify from '../../assets/projects/catamarango/pay-verify.webp';
+import skipperDisclaimer from '../../assets/projects/catamarango/skipper-disclaimer.webp';
 import skipperPriority from '../../assets/projects/catamarango/skipper-priority.webp';
-import skippers from '../../assets/projects/catamarango/skippers.webp';
+import skippersPage from '../../assets/projects/catamarango/skippers-page.webp';
+import travelDates from '../../assets/projects/catamarango/travel-dates.webp';
 
 export const catamarango: CaseStudy = {
   facts: [
     { label: 'Продукт', value: 'Платформа аренды катамаранов со шкипером' },
     { label: 'Роль', value: 'Продуктовый дизайнер' },
-    { label: 'Платформы', value: 'Веб: десктоп, планшет, телефон' },
-    { label: 'Что внутри', value: 'Каталог, подбор шкипера, бронирование и оплата, кабинеты клиента и владельца' },
+    { label: 'Платформы', value: 'Веб: десктоп и телефон' },
+    { label: 'Что внутри', value: 'Каталог, подбор шкипера, бронирование и оплата, кабинет клиента' },
   ],
   sections: [
     {
@@ -48,87 +62,139 @@ export const catamarango: CaseStudy = {
         },
         {
           layout: 'wide',
-          images: [{ src: heroFinal, alt: 'Финальный первый экран: панель с поиском катамарана и поиском шкипера по номеру брони', caption: 'Финал: введён номер брони' }],
+          images: [{ src: heroFinal, scale: 2, alt: 'Финальный первый экран: панель с поиском катамарана и поиском шкипера по номеру брони', caption: 'Финал: введён номер брони' }],
         },
       ],
     },
     {
       title: 'Подбор шкипера',
       text: [
-        'Шкипер может оказаться занят на нужные даты, и клиент узнаёт об этом уже после выбора. Поэтому вместо одного шкипера клиент собирает список: добавляет понравившихся в избранное и идёт дальше с ним.',
+        'Шкипер может оказаться занят на нужные даты, и клиент узнаёт об этом уже после выбора. Поэтому вместо одного шкипера клиент собирает список: добавляет понравившихся в избранное и идёт дальше с ним. Перед выбором платформа прямо объясняет правила: выбранные шкиперы — приоритет, лучше отметить пятерых и больше, ответ придёт примерно за четыре дня.',
         'В заказе первый шкипер из списка — основной, остальные — приоритетные. Платформа сама связывается с ними по очереди, а если никто не свободен, предлагает замену по той же цене. Клиенту не нужно начинать поиск заново.',
       ],
       media: [
         {
-          layout: 'wide',
-          images: [{ src: skippers, alt: 'Каталог шкиперов с фильтрами по цене, возрасту и национальности и окном избранных шкиперов', caption: 'Каталог шкиперов: фильтры слева, список избранных поверх карточек' }],
-        },
-        {
-          layout: 'narrow',
-          images: [{ src: skipperPriority, alt: 'Блок заказа «Ваш шкипер»: основной шкипер и два приоритетных', caption: 'В заказе: основной шкипер и запасные по приоритету' }],
-        },
-      ],
-    },
-    {
-      title: 'Бронирование в три шага',
-      text: [
-        'Последний шаг — самый нагруженный: услуги, шкипер, страховка, способ оплаты. Я разложил его на блоки в том порядке, в каком человек принимает решения, а итог вынес в колонку справа: видно, из чего складывается сумма.',
-        'Отказ сделан таким же простым, как согласие: «мне не нужны услуги» и «мне не нужна страховка» — это обычные переключатели, а не спрятанные ссылки. Оплату можно разбить на две части без комиссии; если до выхода меньше месяца, вариант остаётся виден, но объясняет, почему он недоступен.',
-      ],
-      media: [
-        {
-          layout: 'wide',
-          images: [{ src: orderExtras, alt: 'Третий шаг бронирования: услуги, шкипер и колонка с итогом', caption: 'Шаг 3: услуги и шкипер слева, итог справа' }],
+          layout: 'page',
+          images: [{ src: skippersPage, alt: 'Второй шаг бронирования: каталог шкиперов с фильтрами и окном избранных шкиперов', caption: 'Шаг 2: каталог шкиперов, фильтры слева, список избранных поверх карточек' }],
         },
         {
           layout: 'pair',
           images: [
-            { src: orderInsurance, alt: 'Выбор страховки: четыре варианта с описанием и ценой', caption: 'Страховка: что покрывает и кому подходит' },
-            { src: orderPayment, alt: 'Способ оплаты: целиком или двумя частями, промокод и карта', caption: 'Оплата: целиком или в две части' },
+            { src: skipperDisclaimer, alt: 'Окно с правилами выбора: выбранные шкиперы — приоритет, рекомендуем выбрать от пяти, ответ около четырёх дней', caption: 'Правила выбора — до того, как клиент начал выбирать' },
+            { src: skipperPriority, bare: true, alt: 'Блок заказа «Ваш шкипер»: основной шкипер и два приоритетных', caption: 'В заказе: основной шкипер и запасные по приоритету' },
           ],
         },
       ],
     },
     {
-      title: 'Каталог на карте',
+      title: 'Бронирование: три версии',
       text: [
-        'Катамаран выбирают сначала по месту, потом по лодке. Поэтому у каталога два вида — список и карта с числом лодок в каждой точке. Переключение стоит рядом с сортировкой.',
+        'Последний шаг — самый нагруженный: услуги, шкипер, страховка, способ оплаты. Страницу я пересобирал трижды. Сначала шкипер был большим блоком «добавить команду» посреди заказа и перетягивал внимание. Потом стал компактной карточкой. В финале это «ваш шкипер» со ссылкой на остальной список: блок говорит о результате выбора, а не предлагает выбирать заново.',
+        'Итог вынесен в колонку справа: видно, из чего складывается сумма. Отказ сделан таким же простым, как согласие: «мне не нужны услуги» — обычный переключатель, а не спрятанная ссылка. Оплату можно разбить на две части без комиссии; если до выхода меньше месяца, вариант остаётся виден, но объясняет, почему он недоступен.',
       ],
       media: [
         {
-          layout: 'wide',
-          images: [{ src: catalogMap, alt: 'Каталог катамаранов в виде карты с количеством лодок по точкам', caption: 'Каталог: вид на карте' }],
+          layout: 'trio',
+          images: [
+            { src: orderV1, alt: 'Страница заказа, версия 1: шкипер большим блоком «добавить команду»', caption: 'Версия 1' },
+            { src: orderV2, alt: 'Страница заказа, версия 2: шкипер компактной карточкой', caption: 'Версия 2' },
+            { src: orderFinal, alt: 'Страница заказа, финал: шаги сверху, блок «ваш шкипер», страховка и оплата', caption: 'Финал' },
+          ],
+        },
+        {
+          layout: 'pair',
+          images: [
+            { src: orderCrew, bare: true, alt: 'Блок «добавить команду» из первой версии: крупное фото шкипера и цена', caption: 'Версия 1: шкипер как отдельная покупка' },
+            { src: orderSummary, bare: true, alt: 'Карточка итога: катамаран, даты, чартер, сервисный сбор, услуги, страховка, сумма', caption: 'Итог: из чего складывается сумма' },
+          ],
         },
       ],
     },
     {
-      title: 'Кабинет владельца',
+      title: 'Оплата и состояния',
       text: [
-        'Вторая сторона платформы — владельцы лодок. Чтобы выставить катамаран, нужно заполнить одиннадцать разделов: от описания и фото до цен, документов и скидок. Длинную форму я разбил на шаги с кругом прогресса: видно, сколько уже сделано и что осталось, а к любому разделу можно вернуться.',
-        'Цена задаётся периодами, потому что сезон сильно меняет стоимость. Календарь показывает, когда лодка недоступна и по какой причине.',
+        'Бронь на несколько тысяч евро нельзя обрывать молчанием. У каждого исхода свой экран и одно понятное действие: подтвердить почту, продолжить оплату, попробовать ещё раз. После оплаты клиент видит, что бронь подтверждена и где её найти.',
       ],
       media: [
         {
+          layout: 'trio',
+          images: [
+            { src: payVerify, bare: true, alt: 'Окно: подтвердите адрес почты', caption: 'Почта не подтверждена' },
+            { src: paySuccess, bare: true, alt: 'Окно: почта подтверждена, продолжить оплату', caption: 'Можно продолжать' },
+            { src: payFailed, bare: true, alt: 'Окно: что-то пошло не так, попробовать ещё раз', caption: 'Ошибка' },
+          ],
+        },
+        {
+          layout: 'wide',
+          images: [{ src: bookingConfirmed, bare: true, alt: 'Сообщение: бронь подтверждена, вся информация в разделе «Бронирования»', caption: 'Бронь подтверждена' }],
+        },
+      ],
+    },
+    {
+      title: 'Каталог',
+      text: [
+        'Катамаран выбирают сначала по месту, потом по лодке. Поэтому карта стоит рядом со списком: метки показывают число лодок в каждой точке, а карточка лодки открывается прямо на карте.',
+        'В поиске много мелких решений. Направление можно задать страной, городом или мариной, и уровень подписан на каждом варианте. Календарь заранее говорит, что около 80% катамаранов сдаются с субботы по субботу, — человек не тратит время на даты, которых почти не бывает.',
+      ],
+      media: [
+        {
+          layout: 'wide',
+          images: [{ src: catalog, scale: 2, alt: 'Каталог катамаранов: фильтры, список лодок и карта с числом лодок по точкам', caption: 'Каталог: список и карта рядом' }],
+        },
+        {
           layout: 'pair',
           images: [
-            { src: ownerPrice, alt: 'Кабинет владельца: цена по периодам и прогресс заполнения 27%', caption: 'Цена по периодам' },
-            { src: ownerCalendar, alt: 'Кабинет владельца: календарь недоступности лодки и прогресс 54%', caption: 'Календарь недоступности' },
+            { src: destination, bare: true, alt: 'Выбор направления: страна, город или марина с подписью уровня', caption: 'Направление: страна, город или марина' },
+            { src: travelDates, bare: true, alt: 'Календарь с подсказкой: около 80% катамаранов сдаются с субботы по субботу', caption: 'Даты: подсказка про субботу' },
           ],
+        },
+      ],
+    },
+    {
+      title: 'Страница катамарана',
+      text: [
+        'Страница отвечает на вопросы в том порядке, в каком их задают: как выглядит, сколько людей поместится, что есть на борту, когда свободен и сколько стоит. Запрос дополнительных фото — отдельная кнопка у галереи: лодку за такие деньги хотят рассмотреть.',
+      ],
+      media: [
+        {
+          layout: 'page',
+          images: [{ src: boatPage, alt: 'Страница катамарана: галерея, характеристики, описание и частые вопросы', caption: 'Страница катамарана целиком' }],
+        },
+        {
+          layout: 'wide',
+          images: [{ src: boatPhotos, alt: 'Просмотр фотографий катамарана на весь экран', caption: 'Просмотр фото' }],
+        },
+      ],
+    },
+    {
+      title: 'После брони',
+      text: [
+        'В кабинете клиента брони разложены по статусам: подтверждённые, на модерации, архив. В каждой карточке лодка, даты, шкипер и сумма — без перехода внутрь. Сравнение ставит выбранные катамараны рядом по одним и тем же строкам: цена, год, вместимость, каюты.',
+      ],
+      media: [
+        {
+          layout: 'wide',
+          images: [{ src: bookings, scale: 2, alt: 'Кабинет клиента: список бронирований со статусами', caption: 'Бронирования' }],
+        },
+        {
+          layout: 'wide',
+          images: [{ src: compared, alt: 'Сравнение трёх катамаранов по цене, году, вместимости и каютам', caption: 'Сравнение катамаранов' }],
         },
       ],
     },
     {
       title: 'Телефон',
       text: [
-        'Все экраны собраны и для телефона. Поиск остаётся первым, что видит человек, шаги бронирования идут сверху страницы катамарана, а даты и цена вынесены в отдельный блок — их не нужно искать в длинном описании.',
+        'Все экраны собраны и для телефона. Список избранных шкиперов, фильтры и меню открываются на весь экран, чтобы в них не приходилось целиться, а главное действие закреплено внизу.',
       ],
       media: [
         {
           layout: 'phones',
           images: [
-            { src: mobileMain, alt: 'Главная на телефоне', caption: 'Главная' },
-            { src: mobileBoat, alt: 'Страница катамарана на телефоне: шаги бронирования, фото, характеристики', caption: 'Страница катамарана' },
-            { src: mobileAvailability, alt: 'Страница катамарана на телефоне: даты, цена и расположение', caption: 'Даты и цена' },
+            { src: mobileSkippers, alt: 'Телефон: список избранных шкиперов и кнопка «следующий шаг»', caption: 'Избранные шкиперы' },
+            { src: mobileFilters, alt: 'Телефон: фильтры шкиперов на весь экран', caption: 'Фильтры' },
+            { src: mobilePhotos, alt: 'Телефон: просмотр фото катамарана', caption: 'Просмотр фото' },
+            { src: mobileMenu, alt: 'Телефон: меню', caption: 'Меню' },
           ],
         },
       ],
