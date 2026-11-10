@@ -1,12 +1,14 @@
 ---
-// Страница кейса — заглушка до макета. Шапка — обложка: в неё вырастает карточка кейса (морф, см. global.css),
-// текст под ней всплывает по очереди.
+// Страница кейса. Шапка — обложка: в неё вырастает карточка кейса (морф, см. global.css), текст под ней всплывает
+// по очереди. Если у кейса есть разбор (src/data/cases), ниже идут факты и разделы «заголовок — текст — экраны»;
+// экраны проявляются по скроллу (scroll-driven, только transform и opacity). Без разбора — только шапка.
 import { Image } from 'astro:assets';
 import ArrowRightLong from '../../assets/icons/arrow-right-long.svg';
 import { coverTransitionName, projectUrl, projects } from '../../data/projects';
 import Footer from '../../components/footer/Footer.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { formatCounter } from '../../lib/stage/math';
+import { caseStudies } from '../../data/cases';
 
 export function getStaticPaths() {
   return projects.map((project, index) => ({ params: { slug: project.slug }, props: { project, index } }));
@@ -14,6 +16,14 @@ export function getStaticPaths() {
 
 const { project, index } = Astro.props;
 const next = projects[(index + 1) % projects.length]!;
+const study = caseStudies[project.slug];
+const sizes: Record<string, string> = {
+  wide: '(min-width: 1240px) 1200px, 100vw',
+  narrow: '(min-width: 800px) 720px, 100vw',
+  pair: '(min-width: 1240px) 590px, (min-width: 720px) 50vw, 100vw',
+  trio: '(min-width: 1240px) 390px, (min-width: 720px) 33vw, 100vw',
+  phones: '(min-width: 720px) 300px, 70vw',
+};
 ---
 
 <BaseLayout title={`${project.title} — кейс | Пашковский Руслан`} description={project.summary}>
@@ -29,6 +39,49 @@ const next = projects[(index + 1) % projects.length]!;
     <p class="case__counter">{formatCounter(index, projects.length)}</p>
     <h1 class="case__title">{project.title}</h1>
     <p class="case__summary">{project.summary}</p>
+
+    {
+      study && (
+        <>
+          <dl class="case__facts">
+            {study.facts.map((fact) => (
+              <div>
+                <dt>{fact.label}</dt>
+                <dd>{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {study.sections.map((section, i) => (
+            <section class="case__section">
+              <div class="case__section-head">
+                <span class="case__section-num" aria-hidden="true">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <h2 class="case__section-title">{section.title}</h2>
+              </div>
+              <div class="case__section-text">
+                {section.text.map((p) => (
+                  <p>{p}</p>
+                ))}
+              </div>
+              {section.media?.map((media) => (
+                <div class:list={['case__media', `case__media--${media.layout}`]}>
+                  {media.images.map((image, k) => (
+                    <figure class="case__shot" style={`--k:${k}`}>
+                      <div class="case__shot-frame">
+                        <Image src={image.src} widths={[400, 700, 1000, image.src.width]} sizes={sizes[media.layout]} alt={image.alt} loading="lazy" decoding="async" />
+                      </div>
+                      {image.caption && <figcaption>{image.caption}</figcaption>}
+                    </figure>
+                  ))}
+                </div>
+              ))}
+            </section>
+          ))}
+        </>
+      )
+    }
 
     <a class="case__next" href={projectUrl(next)}>
       Следующий проект
@@ -128,12 +181,173 @@ const next = projects[(index + 1) % projects.length]!;
     }
   }
 
+  /* ---------- разбор кейса ---------- */
+  .case__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px 32px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+  }
+
+  .case__facts dt {
+    color: var(--color-secondary);
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  .case__facts dd {
+    margin-top: 6px;
+    font-size: 18px;
+    line-height: 1.25;
+  }
+
+  .case__section {
+    display: grid;
+    gap: 24px 32px;
+    margin-top: clamp(72px, 10vw, 140px);
+  }
+
+  .case__section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .case__section-num {
+    flex: none;
+    color: var(--color-secondary);
+    font-size: 14px;
+  }
+
+  .case__section-title {
+    font-size: clamp(28px, 3.6vw, 48px);
+    font-weight: var(--font-weight-heading);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  .case__section-text {
+    display: grid;
+    gap: 14px;
+    max-width: 640px;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .case__media {
+    display: grid;
+    gap: 16px;
+    grid-column: 1 / -1;
+    margin-top: 16px;
+  }
+
+  .case__shot figcaption {
+    margin-top: 10px;
+    color: var(--color-secondary);
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  /* экран лежит на белой подложке со скруглением, как карточки сайта */
+  .case__shot-frame {
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
+    border-radius: clamp(14px, 2vw, 24px);
+    background: var(--color-surface);
+  }
+
+  .case__shot-frame :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .case__media--narrow {
+    justify-items: center;
+  }
+
+  .case__media--narrow .case__shot {
+    width: min(100%, 720px);
+  }
+
+  /* телефоны: листаются вбок, если не помещаются */
+  .case__media--phones {
+    grid-auto-flow: column;
+    grid-auto-columns: min(70vw, 300px);
+    justify-content: start;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .case__media--phones::-webkit-scrollbar {
+    display: none;
+  }
+
+  .case__media--phones .case__shot {
+    scroll-snap-align: start;
+  }
+
+  .case__media--phones .case__shot-frame {
+    border-radius: 28px;
+  }
+
+  @media (min-width: 720px) {
+    .case__media--pair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    .case__media--trio {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .case__media--phones {
+      justify-content: center;
+      gap: 24px;
+    }
+  }
+
+  /* ноутбук и десктоп: заголовок раздела слева, текст справа, экраны во всю ширину */
+  @media (min-width: 1024px) {
+    .case__section {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+    }
+  }
+
+  /* экраны всплывают, пока заезжают на экран; соседние — с небольшим отставанием (--k).
+     Таймлайн — через переменную: минификатор иначе ломает animation-timeline */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .case__shot,
+      .case__section-head,
+      .case__section-text {
+        --rise-tl: view();
+
+        animation: case-shot linear both;
+        animation-timeline: var(--rise-tl);
+        animation-range: entry calc(var(--k, 0) * 6%) entry calc(55% + var(--k, 0) * 6%);
+      }
+    }
+  }
+
+  @keyframes case-shot {
+    from {
+      opacity: 0;
+      transform: translateY(48px);
+    }
+  }
+
   .case__next {
     display: inline-flex;
     align-self: flex-end;
     align-items: center;
     gap: 8px;
-    margin-top: 24px;
+    margin-top: clamp(48px, 8vw, 96px);
     border-bottom: 1px solid var(--color-text);
     font-weight: var(--font-weight-text);
   }
