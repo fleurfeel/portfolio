@@ -333,7 +333,6 @@ const cardVars = (i: number) => {
       --card-y: 50%;
       --info-w: 27.0833vw;
       --info-right: var(--pad-x);
-      --info-top: 21.3889vw;
       --counter-fs: max(14px, 1.25vw);
       --name-fs: 2.2222vw;
       --summary-fs: max(14px, 1.25vw);
@@ -355,20 +354,24 @@ const cardVars = (i: number) => {
       font-size: var(--title-fs);
     }
 
+    /* маскот не выше, чем помещается между заголовком и низом экрана: на низких ноутбуках (1536×730 при масштабе
+       125%) иначе кудри заходят под заголовок. 1.066 — пропорция постера avatar.png (1295 / 1215) */
     .projects__mascot {
       left: var(--pad-x);
       bottom: var(--mascot-bottom);
-      width: var(--mascot-w);
+      width: min(var(--mascot-w), (100svh - var(--mascot-bottom) - var(--title-top) - var(--title-fs) * 1.2 - 32px) / 1.066);
     }
 
     .projects__mascot :global(.projects__poster--m) {
       display: none;
     }
 
+    /* текст кейса — по центру линии карточек (их центр — --card-y), а не на фиксированной высоте */
     .projects__info {
       position: absolute;
-      top: var(--info-top);
+      top: var(--card-y);
       right: var(--info-right);
+      translate: 0 -50%;
       display: flex;
       flex-direction: column;
       width: var(--info-w);
@@ -409,7 +412,6 @@ const cardVars = (i: number) => {
       --card-y: calc(50% + 13.5 * (100vw - 1440px) / 480);
       --info-w: calc(390px + 52 * (100vw - 1440px) / 480);
       --info-right: calc(60px + 95 * (100vw - 1440px) / 480);
-      --info-top: 308px;
       --counter-fs: 18px;
       --name-fs: calc(32px + 4 * (100vw - 1440px) / 480);
       --summary-fs: calc(18px + 2 * (100vw - 1440px) / 480);

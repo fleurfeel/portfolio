@@ -417,8 +417,9 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
       animation-delay: 0.15s;
     }
 
-    /* строки и карточки поднимаются волной */
-    .work__item,
+    /* строки и карточки поднимаются волной. В строке анимируется содержимое, а не сама строка: трансформация
+       предка сделала бы его рамкой для fixed-обложки, и та во время появления вставала бы не на своё место */
+    .work__row > :not(.work__thumb),
     .work__card {
       animation: work-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
       animation-delay: calc(0.2s + var(--i) * 0.07s);

@@ -78,7 +78,11 @@ test.describe('морф карточки кейса в шапку', () => {
     await recordTransition(page);
     await page.goto('/projects');
     await page.getByText('Сетка', { exact: true }).click();
-    await page.locator('.work__card a[href="/projects/lernium"]').click();
+    // карточки сначала поднимаются волной — нажимаем, когда сетка встала
+    const card = page.locator('.work__card a[href="/projects/lernium"]');
+    await card.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(1500);
+    await card.click();
     await page.waitForURL('**/projects/lernium');
     expect(await transition(page)).toContain('::view-transition-new(case-lernium)');
   });
