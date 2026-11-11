@@ -56,8 +56,14 @@ test.describe('страница кейса', () => {
     expect(scroll).toBeGreaterThan(client);
   });
 
-  test('кейс без разбора показывает только шапку', async ({ page }) => {
+  test('Лерниум: разбор из одиннадцати разделов', async ({ page }) => {
     await page.goto('/projects/lernium');
+    await expect(page.locator('.case__section')).toHaveCount(11);
+    await expect(page.getByRole('heading', { name: 'Дизайн-система' })).toBeAttached();
+  });
+
+  test('кейс без разбора показывает только шапку', async ({ page }) => {
+    await page.goto('/projects/yufu-pro');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.locator('.case__section')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Следующий проект' })).toBeVisible();
