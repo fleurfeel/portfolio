@@ -40,6 +40,13 @@ test.describe('страница кейса', () => {
     expect(await page.locator('.case__shot img').count()).toBeGreaterThanOrEqual(9);
   });
 
+  test('Abeona: разбор из девяти разделов с экранами', async ({ page }) => {
+    await page.goto('/projects/abeona');
+    await expect(page.locator('.case__section')).toHaveCount(9);
+    await expect(page.getByRole('heading', { name: 'Карта навыков' })).toBeAttached();
+    expect(await page.locator('.case__shot img').count()).toBe(10);
+  });
+
   test('кейс без разбора показывает только шапку', async ({ page }) => {
     await page.goto('/projects/lernium');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
