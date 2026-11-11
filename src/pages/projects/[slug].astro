@@ -1,8 +1,10 @@
 ---
-// Страница кейса. Шапка — обложка: в неё вырастает карточка кейса (морф, см. global.css), текст под ней всплывает
-// по очереди. Если у кейса есть разбор (src/data/cases), ниже идут факты и разделы «заголовок — текст — экраны»;
-// экраны проявляются по скроллу (scroll-driven, только transform и opacity); по нажатию экран открывается во весь
-// экран (остров CaseLightbox, кнопки data-zoom). Без разбора — только шапка.
+// Страница кейса в духе студийных кейсов (Bigly, Clay, Locomotive): огромный заголовок, вводный текст крупно, факты
+// строкой, обложка во всю ширину — в неё вырастает карточка кейса (морф, см. global.css). Разделы разбора: слева
+// метка «(01) Задача», справа первый абзац крупным вводным текстом, остальные — обычным; экраны во всю ширину.
+// В конце — приглашение обсудить проект (форма заявки, остров LeadForm) и крупная ссылка на следующий кейс.
+// Экраны проявляются по скроллу (scroll-driven, только transform и opacity) и открываются во весь экран
+// (остров CaseLightbox, кнопки data-zoom). Кейс без разбора — шапка, приглашение и следующий кейс.
 import { Image } from 'astro:assets';
 import ArrowRightLong from '../../assets/icons/arrow-right-long.svg';
 import { coverTransitionName, projectUrl, projects } from '../../data/projects';
@@ -11,6 +13,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { formatCounter } from '../../lib/stage/math';
 import { caseStudies } from '../../data/cases';
 import CaseLightbox from '../../components/case/CaseLightbox.vue';
+import LeadForm from '../../components/services/LeadForm.vue';
+import { services } from '../../data/services';
 
 export function getStaticPaths() {
   return projects.map((project, index) => ({ params: { slug: project.slug }, props: { project, index } }));
@@ -20,12 +24,14 @@ const { project, index } = Astro.props;
 const next = projects[(index + 1) % projects.length]!;
 const study = caseStudies[project.slug];
 const sizes: Record<string, string> = {
-  wide: '(min-width: 1240px) 1200px, 100vw',
+  wide: '(min-width: 1600px) 1488px, 100vw',
   page: '(min-width: 840px) 760px, 100vw',
-  pair: '(min-width: 1240px) 590px, (min-width: 720px) 50vw, 100vw',
-  trio: '(min-width: 1240px) 390px, (min-width: 720px) 33vw, 100vw',
+  pair: '(min-width: 1600px) 740px, (min-width: 720px) 50vw, 100vw',
+  trio: '(min-width: 1600px) 490px, (min-width: 720px) 33vw, 100vw',
   phones: '(min-width: 720px) 280px, 70vw',
 };
+const num = (i: number) => `(${String(i + 1).padStart(2, '0')})`;
+const natural = (src: { width: number; height: number }, scale = 1) => ({ width: Math.round(src.width / scale), height: Math.round(src.height / scale) });
 ---
 
 <BaseLayout title={`${project.title} — кейс | Пашковский Руслан`} description={project.summary}>
@@ -35,47 +41,65 @@ const sizes: Record<string, string> = {
       <a href="/projects">Все проекты</a>
     </nav>
 
+    <header class="case__hero">
+      <p class="case__counter">{formatCounter(index, projects.length)}</p>
+      <h1 class="case__title">{project.title}</h1>
+      <div class="case__intro">
+        <p class="case__label">(Коротко)</p>
+        <div class="case__intro-body">
+          <p class="case__summary">{project.summary}</p>
+          {
+            study && (
+              <dl class="case__facts">
+                {study.facts.map((fact) => (
+                  <div>
+                    <dt>{fact.label}</dt>
+                    <dd>{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )
+          }
+        </div>
+      </div>
+    </header>
+
     <div class="case__image" style={`view-transition-name:${coverTransitionName(project)}`}>
-      <Image src={project.cover} widths={[600, 1000, 1400, 1920]} sizes="(min-width: 1240px) 1200px, 100vw" alt={`Первый экран ${project.title}`} loading="eager" />
+      <Image src={project.cover} widths={[600, 1000, 1400, 1920]} sizes="(min-width: 1600px) 1488px, 100vw" alt={`Первый экран ${project.title}`} loading="eager" />
     </div>
-    <p class="case__counter">{formatCounter(index, projects.length)}</p>
-    <h1 class="case__title">{project.title}</h1>
-    <p class="case__summary">{project.summary}</p>
 
     {
-      study && (
-        <>
-          <dl class="case__facts">
-            {study.facts.map((fact) => (
-              <div>
-                <dt>{fact.label}</dt>
-                <dd>{fact.value}</dd>
-              </div>
-            ))}
-          </dl>
-
-          {study.sections.map((section, i) => (
-            <section class="case__section">
-              <div class="case__section-head">
-                <span class="case__section-num" aria-hidden="true">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <h2 class="case__section-title">{section.title}</h2>
-              </div>
-              <div class="case__section-text">
-                {section.text.map((p) => (
-                  <p>{p}</p>
-                ))}
-              </div>
-              {section.media?.map((media) => (
-                <div class:list={['case__media', `case__media--${media.layout}`]}>
-                  {media.images.map((image, k) => (
-                    <figure class="case__shot" style={`--k:${k};--natural:${Math.round(image.src.width / (image.scale ?? 1))}px`}>
+      study?.sections.map((section, i) => {
+        const [lead, ...rest] = section.text;
+        return (
+          <section class="case__section">
+            <h2 class="case__section-label">
+              <span class="case__section-num" aria-hidden="true">
+                {num(i)}
+              </span>
+              {section.title}
+            </h2>
+            <div class="case__section-body">
+              {lead && <p class="case__lead">{lead}</p>}
+              {rest.length > 0 && (
+                <div class="case__section-text">
+                  {rest.map((p) => (
+                    <p>{p}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+            {section.media?.map((media) => (
+              <div class:list={['case__media', `case__media--${media.layout}`]}>
+                {media.images.map((image, k) => {
+                  const n = natural(image.src, image.scale);
+                  return (
+                    <figure class="case__shot" style={`--k:${k};--natural:${n.width}px`}>
                       <button
                         class:list={['case__shot-frame', image.bare && 'case__shot-frame--bare']}
                         type="button"
                         data-zoom
-                        data-natural={`${Math.round(image.src.width / (image.scale ?? 1))}x${Math.round(image.src.height / (image.scale ?? 1))}`}
+                        data-natural={`${n.width}x${n.height}`}
                         aria-label={`Открыть во весь экран: ${image.alt}`}
                       >
                         <Image
@@ -89,44 +113,59 @@ const sizes: Record<string, string> = {
                       </button>
                       {image.caption && <figcaption>{image.caption}</figcaption>}
                     </figure>
-                  ))}
-                </div>
-              ))}
-            </section>
-          ))}
-        </>
-      )
+                  );
+                })}
+              </div>
+            ))}
+          </section>
+        );
+      })
     }
 
+    <section class="case__outro" aria-labelledby="case-outro-title">
+      <h2 id="case-outro-title" class="case__outro-title">Нужен продукт, который так же работает на бизнес?</h2>
+      <button class="case__cta" type="button" data-lead="">Обсудить проект</button>
+    </section>
+
     <a class="case__next" href={projectUrl(next)}>
-      Следующий проект
-      <ArrowRightLong />
+      <span class="case__next-label">Следующий проект</span>
+      <span class="case__next-title">{next.title}</span>
+      <span class="case__next-cover" aria-hidden="true">
+        <Image src={next.cover} widths={[400, 700]} sizes="(min-width: 1024px) 360px, 90vw" alt="" loading="lazy" decoding="async" />
+      </span>
+      <span class="case__next-arrow" aria-hidden="true"><ArrowRightLong /></span>
     </a>
   </main>
   <Footer />
   {study && <CaseLightbox client:idle />}
+  <LeadForm client:idle services={services.map((s) => s.title)} />
 </BaseLayout>
 
 <style>
   .case {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 48px 20px 80px;
+    padding: 32px clamp(20px, 4vw, 56px) 96px;
+    color: var(--color-text);
   }
 
   .case__nav {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 16px;
     font-weight: var(--font-weight-text);
   }
 
-  .case a:focus-visible {
+  .case a:focus-visible,
+  .case button:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 4px;
+  }
+
+  /* ---------- шапка ---------- */
+  .case__hero {
+    margin-top: clamp(48px, 7vw, 112px);
   }
 
   .case__counter {
@@ -135,23 +174,62 @@ const sizes: Record<string, string> = {
   }
 
   .case__title {
-    font-size: clamp(32px, 6vw, 64px);
+    margin-top: 12px;
+    font-size: clamp(52px, 10vw, 168px);
     font-weight: var(--font-weight-heading);
-    line-height: 1.2;
-    letter-spacing: -0.01em;
+    line-height: 0.92;
+    letter-spacing: -0.02em;
     text-transform: uppercase;
+    overflow-wrap: anywhere;
   }
 
-  .case__summary {
-    max-width: 640px;
+  .case__intro {
+    display: grid;
+    gap: 16px 32px;
+    margin-top: clamp(32px, 4vw, 64px);
+  }
+
+  .case__label,
+  .case__section-num,
+  .case__next-label {
     color: var(--color-secondary);
-    font-size: 18px;
+    font-size: 15px;
     font-weight: var(--font-weight-text);
+    line-height: 1.3;
+  }
+
+  /* вводный текст и первые абзацы разделов — крупно, как в студийных кейсах */
+  .case__summary,
+  .case__lead {
+    max-width: 30em;
+    font-size: clamp(22px, 2.3vw, 36px);
+    font-weight: var(--font-weight-text);
+    line-height: 1.27;
+  }
+
+  .case__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 24px 32px;
+    margin-top: clamp(32px, 4vw, 56px);
+    padding-top: 20px;
+    border-top: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+  }
+
+  .case__facts dt {
+    color: var(--color-secondary);
+    font-size: 14px;
     line-height: 1.2;
+  }
+
+  .case__facts dd {
+    margin-top: 6px;
+    font-size: 17px;
+    line-height: 1.3;
   }
 
   .case__image {
-    margin-bottom: 24px;
+    margin-top: clamp(40px, 6vw, 96px);
     overflow: hidden;
     view-transition-class: case-cover;
     border-radius: clamp(18px, 2.5vw, 36px);
@@ -164,101 +242,72 @@ const sizes: Record<string, string> = {
     height: auto;
   }
 
-  /* текст всплывает по очереди, пока обложка встаёт на место */
+  /* текст шапки всплывает по очереди, пока обложка встаёт на место */
   @media (prefers-reduced-motion: no-preference) {
     .case__counter,
     .case__title,
-    .case__summary,
-    .case__next {
-      animation: case-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    .case__intro {
+      animation: case-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
     }
 
     .case__counter {
-      animation-delay: 0.3s;
+      animation-delay: 0.25s;
     }
 
     .case__title {
-      animation-delay: 0.37s;
+      animation-delay: 0.32s;
     }
 
-    .case__summary {
-      animation-delay: 0.44s;
-    }
-
-    .case__next {
-      animation-delay: 0.51s;
+    .case__intro {
+      animation-delay: 0.42s;
     }
   }
 
   @keyframes case-rise {
     from {
       opacity: 0;
-      transform: translateY(36px);
+      transform: translateY(40px);
     }
   }
 
-  /* ---------- разбор кейса ---------- */
-  .case__facts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 24px 32px;
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
-  }
-
-  .case__facts dt {
-    color: var(--color-secondary);
-    font-size: 14px;
-    line-height: 1.2;
-  }
-
-  .case__facts dd {
-    margin-top: 6px;
-    font-size: 18px;
-    line-height: 1.25;
-  }
-
+  /* ---------- разделы ---------- */
   .case__section {
     display: grid;
-    gap: 24px 32px;
-    margin-top: clamp(72px, 10vw, 140px);
+    gap: 20px 32px;
+    margin-top: clamp(96px, 12vw, 200px);
   }
 
-  .case__section-head {
+  .case__section-label {
     display: flex;
     align-items: baseline;
-    gap: 12px;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: var(--font-weight-text);
+    line-height: 1.3;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .case__section-num {
-    flex: none;
-    color: var(--color-secondary);
-    font-size: 14px;
-  }
-
-  .case__section-title {
-    font-size: clamp(28px, 3.6vw, 48px);
-    font-weight: var(--font-weight-heading);
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-    text-transform: uppercase;
+    letter-spacing: 0;
   }
 
   .case__section-text {
     display: grid;
     gap: 14px;
-    max-width: 640px;
-    font-size: 18px;
-    line-height: 1.4;
+    max-width: 40em;
+    margin-top: clamp(20px, 2vw, 32px);
+    color: var(--color-secondary);
+    font-size: clamp(17px, 1.25vw, 20px);
+    line-height: 1.45;
   }
 
   .case__media {
     display: grid;
-    gap: 16px;
+    gap: clamp(12px, 1.5vw, 24px);
     grid-column: 1 / -1;
     justify-items: center;
-    margin-top: 16px;
+    margin-top: clamp(24px, 3vw, 48px);
   }
 
   /* экран целиком и не крупнее, чем в макете (--natural): мелкие блоки не растягиваются и не мылятся */
@@ -283,24 +332,13 @@ const sizes: Record<string, string> = {
     cursor: zoom-in;
     transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
     border: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
-    border-radius: clamp(14px, 2vw, 24px);
+    border-radius: clamp(14px, 2vw, 28px);
     background: var(--color-surface);
-  }
-
-  .case__shot-frame:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 4px;
   }
 
   @media (hover: hover) {
     .case__shot-frame:hover {
       transform: scale(1.01);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .case__shot-frame {
-      transition: none;
     }
   }
 
@@ -365,20 +403,149 @@ const sizes: Record<string, string> = {
     }
   }
 
-  /* ноутбук и десктоп: заголовок раздела слева, текст справа, экраны во всю ширину */
-  @media (min-width: 1024px) {
-    .case__section {
-      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  /* ---------- финал: заявка и следующий кейс ---------- */
+  .case__outro {
+    display: grid;
+    justify-items: center;
+    gap: clamp(24px, 3vw, 40px);
+    margin-top: clamp(120px, 14vw, 240px);
+    text-align: center;
+  }
+
+  .case__outro-title {
+    max-width: 14em;
+    font-size: clamp(36px, 5.5vw, 88px);
+    font-weight: var(--font-weight-heading);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+  }
+
+  .case__cta {
+    padding: 18px 36px;
+    border-radius: 42px;
+    background: var(--color-accent);
+    color: var(--color-surface);
+    font: inherit;
+    font-size: 17px;
+    font-weight: var(--font-weight-text);
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  @media (hover: hover) {
+    .case__cta:hover {
+      transform: scale(1.04);
     }
   }
 
-  /* экраны всплывают, пока заезжают на экран; соседние — с небольшим отставанием (--k).
+  .case__next {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'label label'
+      'title arrow'
+      'cover cover';
+    align-items: center;
+    gap: 12px 24px;
+    margin-top: clamp(96px, 12vw, 200px);
+    padding-top: 24px;
+    border-top: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+  }
+
+  .case__next-label {
+    grid-area: label;
+  }
+
+  .case__next-title {
+    grid-area: title;
+    font-size: clamp(40px, 7vw, 120px);
+    font-weight: var(--font-weight-heading);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  .case__next-cover {
+    grid-area: cover;
+    display: block;
+    width: min(100%, 360px);
+    margin-top: 8px;
+    overflow: hidden;
+    border-radius: 20px;
+  }
+
+  .case__next-cover :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .case__next-arrow {
+    grid-area: arrow;
+    display: block;
+    width: clamp(40px, 5vw, 80px);
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .case__next-arrow :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  @media (hover: hover) {
+    .case__next:hover .case__next-arrow {
+      transform: translateX(12px);
+    }
+
+    .case__next:hover .case__next-cover :global(img) {
+      transform: scale(1.04);
+    }
+  }
+
+  /* ---------- ноутбук и десктоп: метки слева, текст справа, как в студийных кейсах ---------- */
+  @media (min-width: 1024px) {
+    .case__intro,
+    .case__section {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+    }
+
+    .case__section-label {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+    }
+
+    .case__next {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 6fr) minmax(0, 3fr);
+      grid-template-areas:
+        'label title cover'
+        '. arrow cover';
+      align-items: end;
+    }
+
+    .case__next-label {
+      align-self: start;
+    }
+
+    .case__next-cover {
+      justify-self: end;
+      margin-top: 0;
+    }
+  }
+
+  /* экраны и текст разделов всплывают, пока заезжают на экран; соседние экраны — с небольшим отставанием (--k).
      Таймлайн — через переменную: минификатор иначе ломает animation-timeline */
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
       .case__shot,
-      .case__section-head,
-      .case__section-text {
+      .case__section-label,
+      .case__section-body,
+      .case__outro,
+      .case__next {
         --rise-tl: view();
 
         animation: case-shot linear both;
@@ -395,13 +562,12 @@ const sizes: Record<string, string> = {
     }
   }
 
-  .case__next {
-    display: inline-flex;
-    align-self: flex-end;
-    align-items: center;
-    gap: 8px;
-    margin-top: clamp(48px, 8vw, 96px);
-    border-bottom: 1px solid var(--color-text);
-    font-weight: var(--font-weight-text);
+  @media (prefers-reduced-motion: reduce) {
+    .case__shot-frame,
+    .case__cta,
+    .case__next-cover :global(img),
+    .case__next-arrow {
+      transition: none;
+    }
   }
 </style>

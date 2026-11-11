@@ -8,7 +8,7 @@ test.describe('страница кейса', () => {
 
     const sections = page.locator('.case__section');
     await expect(sections).toHaveCount(9);
-    await expect(sections.locator('h2').first()).toHaveText('Задача');
+    await expect(sections.locator('h2').first()).toContainText('Задача');
     await expect(page.getByRole('heading', { name: 'Подбор шкипера' })).toBeAttached();
 
     // у каждого экрана есть описание для скринридера
