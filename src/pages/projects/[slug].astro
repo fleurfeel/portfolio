@@ -1,7 +1,8 @@
 ---
 // Страница кейса. Шапка — обложка: в неё вырастает карточка кейса (морф, см. global.css), текст под ней всплывает
 // по очереди. Если у кейса есть разбор (src/data/cases), ниже идут факты и разделы «заголовок — текст — экраны»;
-// экраны проявляются по скроллу (scroll-driven, только transform и opacity). Без разбора — только шапка.
+// экраны проявляются по скроллу (scroll-driven, только transform и opacity); по нажатию экран открывается во весь
+// экран (остров CaseLightbox, кнопки data-zoom). Без разбора — только шапка.
 import { Image } from 'astro:assets';
 import ArrowRightLong from '../../assets/icons/arrow-right-long.svg';
 import { coverTransitionName, projectUrl, projects } from '../../data/projects';
@@ -9,6 +10,7 @@ import Footer from '../../components/footer/Footer.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { formatCounter } from '../../lib/stage/math';
 import { caseStudies } from '../../data/cases';
+import CaseLightbox from '../../components/case/CaseLightbox.vue';
 
 export function getStaticPaths() {
   return projects.map((project, index) => ({ params: { slug: project.slug }, props: { project, index } }));
@@ -69,7 +71,13 @@ const sizes: Record<string, string> = {
                 <div class:list={['case__media', `case__media--${media.layout}`]}>
                   {media.images.map((image, k) => (
                     <figure class="case__shot" style={`--k:${k};--natural:${Math.round(image.src.width / (image.scale ?? 1))}px`}>
-                      <div class:list={['case__shot-frame', image.bare && 'case__shot-frame--bare']}>
+                      <button
+                        class:list={['case__shot-frame', image.bare && 'case__shot-frame--bare']}
+                        type="button"
+                        data-zoom
+                        data-natural={`${Math.round(image.src.width / (image.scale ?? 1))}x${Math.round(image.src.height / (image.scale ?? 1))}`}
+                        aria-label={`Открыть во весь экран: ${image.alt}`}
+                      >
                         <Image
                           src={image.src}
                           widths={[400, 700, 1000, 1440, image.src.width].filter((w) => w <= image.src.width)}
@@ -78,7 +86,7 @@ const sizes: Record<string, string> = {
                           loading="lazy"
                           decoding="async"
                         />
-                      </div>
+                      </button>
                       {image.caption && <figcaption>{image.caption}</figcaption>}
                     </figure>
                   ))}
@@ -96,6 +104,7 @@ const sizes: Record<string, string> = {
     </a>
   </main>
   <Footer />
+  {study && <CaseLightbox client:idle />}
 </BaseLayout>
 
 <style>
@@ -267,10 +276,32 @@ const sizes: Record<string, string> = {
 
   /* экран лежит на белой подложке со скруглением, как карточки сайта */
   .case__shot-frame {
+    display: block;
+    width: 100%;
+    padding: 0;
     overflow: hidden;
+    cursor: zoom-in;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
     border: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
     border-radius: clamp(14px, 2vw, 24px);
     background: var(--color-surface);
+  }
+
+  .case__shot-frame:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  @media (hover: hover) {
+    .case__shot-frame:hover {
+      transform: scale(1.01);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .case__shot-frame {
+      transition: none;
+    }
   }
 
   .case__shot-frame--bare {

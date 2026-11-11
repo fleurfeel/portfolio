@@ -33,6 +33,13 @@ test.describe('страница кейса', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
   });
 
+  test('«Территория решений»: разбор из восьми разделов с экранами', async ({ page }) => {
+    await page.goto('/projects/territoriya-resheniy');
+    await expect(page.locator('.case__section')).toHaveCount(8);
+    await expect(page.getByRole('heading', { name: 'Визуальный язык' })).toBeAttached();
+    expect(await page.locator('.case__shot img').count()).toBeGreaterThanOrEqual(9);
+  });
+
   test('кейс без разбора показывает только шапку', async ({ page }) => {
     await page.goto('/projects/lernium');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
