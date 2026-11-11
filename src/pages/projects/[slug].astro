@@ -340,7 +340,12 @@ const sizes: Record<string, string> = {
     scroll-snap-align: start;
   }
 
+  /* длинная страница на телефоне листается прямо в рамке, как на экране телефона: картинка целиком, без обрезки */
   .case__media--phones .case__shot-frame {
+    max-height: min(640px, 80svh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
     border-radius: 28px;
   }
 

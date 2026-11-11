@@ -21,7 +21,7 @@ test.describe('страница кейса', () => {
         const img = el.querySelector('img')!;
         const frame = el.querySelector('.case__shot-frame')!;
         const style = getComputedStyle(img);
-        return style.objectFit !== 'cover' && Math.abs(frame.clientHeight - img.clientHeight) <= 1 && img.clientWidth <= parseFloat(getComputedStyle(el).getPropertyValue('--natural')) + 1;
+        return style.objectFit !== 'cover' && Math.abs(frame.scrollHeight - img.clientHeight) <= 1 && img.clientWidth <= parseFloat(getComputedStyle(el).getPropertyValue('--natural')) + 1;
       }),
     );
     expect(fits.every(Boolean)).toBe(true);
@@ -45,6 +45,15 @@ test.describe('страница кейса', () => {
     await expect(page.locator('.case__section')).toHaveCount(9);
     await expect(page.getByRole('heading', { name: 'Карта навыков' })).toBeAttached();
     expect(await page.locator('.case__shot img').count()).toBe(10);
+  });
+
+  test('BeSlimShop: разбор из восьми разделов, мобильные экраны листаются в рамке', async ({ page }) => {
+    await page.goto('/projects/beslimshop');
+    await expect(page.locator('.case__section')).toHaveCount(8);
+    await expect(page.getByRole('heading', { name: 'Доверие' })).toBeAttached();
+    const phone = page.locator('.case__media--phones .case__shot-frame').first();
+    const { scroll, client } = await phone.evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
+    expect(scroll).toBeGreaterThan(client);
   });
 
   test('кейс без разбора показывает только шапку', async ({ page }) => {
