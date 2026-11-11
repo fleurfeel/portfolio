@@ -4,6 +4,7 @@ import abeona from '../assets/projects/abeona.png';
 import beslimshop from '../assets/projects/beslimshop.webp';
 import catamarango from '../assets/projects/catamarango.webp';
 import lernium from '../assets/projects/lernium.webp';
+import neuroflex from '../assets/projects/neuroflex.webp';
 import territoriya from '../assets/projects/territoriya-resheniy.webp';
 import yufuPro from '../assets/projects/yufu-pro.png';
 
@@ -57,6 +58,13 @@ export const projects: Project[] = [
     summary:
       'Новый формат хакатона, где вместо слайдов — живая симуляция с ролями и цифровой профиль участника. Спроектировал лендинг, который объясняет механику без перегруза текстом, и саму платформу (под NDA).',
     cover: territoriya,
+  },
+  {
+    slug: 'neuroflex',
+    title: 'NeuroFlex',
+    summary:
+      'Сайт студии, которая запускает AI-стартапы. Спроектировал лендинг, который ведёт от идеи к разговору о проекте: путь создания продукта, компетенции, реальные кейсы студии и мобильная версия.',
+    cover: neuroflex,
   },
 ];
 

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const SLUGS = ['catamarango', 'yufu-pro', 'lernium', 'beslimshop', 'abeona', 'territoriya-resheniy'];
+const SLUGS = ['catamarango', 'yufu-pro', 'lernium', 'beslimshop', 'abeona', 'territoriya-resheniy', 'neuroflex'];
 
 const STEP = 0.6; // src/lib/stage/math.ts → STAGE.step
 const TRANSITION = 1.2; // STAGE.transition
