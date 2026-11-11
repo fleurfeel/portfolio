@@ -111,7 +111,7 @@ export interface MascotSceneOptions {
  * компилируется в ANGLE/Direct3D до секунды и дороже на пиксель. Визуально разница
  * от specular незаметна, поэтому берём стандартный PBR.
  */
-function toStandard(root: Object3D) {
+export function toStandard(root: Object3D) {
   root.traverse((o) => {
     if (!(o instanceof Mesh) || !(o.material instanceof MeshPhysicalMaterial)) return;
     const m = o.material;

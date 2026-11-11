@@ -2,10 +2,21 @@
 // Футер на фоне сайта (прозрачный — под ним фиксированный 3D-холст), снизу по центру выглядывает голова маскота.
 // Слева копирайт, справа документы по 152-ФЗ.
 // Голова — постер: на главной сюда перелетает 3D-голова (Stage.vue, data-mascot-poster="footer-head"), постер прячется;
-// на остальных страницах и без 3D виден сам постер. Голова выезжает снизу, пока футер появляется на экране
+// на остальных страницах 3D-голову рисует остров FooterHead (client:visible — загрузка, только когда футер близко);
+// без WebGL виден сам постер. Голова выезжает снизу, пока футер появляется на экране
 // (CSS scroll-driven animation; без поддержки или при reduced motion — сразу на месте), и чуть приподнимается при наведении.
 import { Image } from 'astro:assets';
 import head from '../../assets/manifesto/head.png';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import FooterHead from './FooterHead.vue';
+
+// хеш содержимого в адресе модели — как в IntroStage.astro: новая версия приходит мимо кэша браузера
+const model = (file: string) => {
+  const hash = createHash('sha1').update(readFileSync(join(process.cwd(), 'public', 'models', file))).digest('hex').slice(0, 8);
+  return `/models/${file}?v=${hash}`;
+};
 
 const year = new Date().getFullYear();
 const docs = [
@@ -31,6 +42,7 @@ const docs = [
       decoding="async"
       data-mascot-poster="footer-head"
     />
+    <FooterHead client:visible modelUrl={model('artem.glb')} mobileModelUrl={model('artem-mobile.glb')} />
   </div>
 </footer>
 
@@ -66,6 +78,7 @@ const docs = [
 
   /* окно показывает верх картинки: кудри и глаза, остальное за краем футера */
   .footer__head {
+    position: relative;
     grid-area: head;
     justify-self: center;
     align-self: end;
@@ -74,7 +87,8 @@ const docs = [
     overflow: hidden;
   }
 
-  .footer__head :global(img) {
+  .footer__head :global(img),
+  .footer__head :global(.footer-head-3d) {
     display: block;
     width: 100%;
     height: auto;
@@ -84,12 +98,14 @@ const docs = [
   }
 
   /* 3D готов (главная) — на месте постера 3D-голова */
-  :global(html[data-mascot='ready']) .footer__head :global(img) {
+  :global(html[data-mascot='ready']) .footer__head :global(img),
+  .footer__head[data-ready] :global(img) {
     opacity: 0;
   }
 
   @media (hover: hover) {
-    .footer__head:hover :global(img) {
+    .footer__head:hover :global(img),
+    .footer__head:hover :global(.footer-head-3d) {
       translate: 0 -6%;
     }
   }
@@ -160,7 +176,8 @@ const docs = [
         view-timeline-name: --footer;
       }
 
-      .footer__head :global(img) {
+      .footer__head :global(img),
+      .footer__head :global(.footer-head-3d) {
         --peek-tl: --footer;
 
         animation: footer-peek linear both;
@@ -182,7 +199,8 @@ const docs = [
 
   @media (prefers-reduced-motion: reduce) {
     .footer a,
-    .footer__head :global(img) {
+    .footer__head :global(img),
+    .footer__head :global(.footer-head-3d) {
       transition: none;
     }
   }
