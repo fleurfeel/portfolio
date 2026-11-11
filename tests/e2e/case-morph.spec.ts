@@ -61,30 +61,33 @@ test.describe('морф карточки кейса в шапку', () => {
     expect(await transition(page)).toContain('::view-transition-old(case-catamarango)');
   });
 
-  test('все проекты: карточка вырастает в шапку и сворачивается обратно', async ({ page }) => {
+  test('все проекты, список: обложка под курсором вырастает в шапку кейса', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await recordTransition(page);
     await page.goto('/projects');
-    await page.locator('a[href="/projects/lernium"]').click();
+    // имя перехода у обложки в списке появляется при наведении — клик Playwright сначала наводит курсор
+    await page.locator('.work__row[href="/projects/lernium"]').click();
     await page.waitForURL('**/projects/lernium');
-    let layers = await transition(page);
+    const layers = await transition(page);
     expect(layers).toContain('::view-transition-old(case-lernium)');
     expect(layers).toContain('::view-transition-new(case-lernium)');
+  });
 
-    // ждём конца первого перехода: новый во время идущего браузер пропускает
-    await page.waitForTimeout(1000);
-    await page.getByRole('link', { name: 'Все проекты' }).click();
-    await page.waitForURL('**/projects');
-    layers = await transition(page);
-    expect(layers).toContain('::view-transition-old(case-lernium)');
-    expect(layers).toContain('::view-transition-new(case-lernium)');
+  test('все проекты, сетка: карточка вырастает в шапку и сворачивается обратно', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await recordTransition(page);
+    await page.goto('/projects');
+    await page.getByText('Сетка', { exact: true }).click();
+    await page.locator('.work__card a[href="/projects/lernium"]').click();
+    await page.waitForURL('**/projects/lernium');
+    expect(await transition(page)).toContain('::view-transition-new(case-lernium)');
   });
 
   test('prefers-reduced-motion: обычный переход без анимации', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await recordTransition(page);
     await page.goto('/projects');
-    await page.locator('a[href="/projects/lernium"]').click();
+    await page.locator('.work__row[href="/projects/lernium"]').click();
     await page.waitForURL('**/projects/lernium');
     expect(await transition(page)).toBeNull();
   });
